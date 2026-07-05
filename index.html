@@ -786,7 +786,7 @@
             <input type="file" id="restore-file-input" onchange="restoreDatabase(event)" class="hidden" accept=".json">
           </label>
           <button onclick="wipeDatabase()" type="button" class="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-sm ml-auto">
-            <i class="fa-solid fa-trash-can"></i> Hapus Seluruh Data (Wipe)
+            <i class="fa-solid fa-trash-can"></i> Hapus Riwayat Transaksi
           </button>
         </div>
       </div>
@@ -954,7 +954,7 @@
         <!-- Logo & Header -->
         <div class="text-center">
           <h3 id="receipt-store-name" class="font-bold text-base uppercase">BAKOELAN DIMSUM</h3>
-          <p id="receipt-store-address" class="text-[10px]">Jl. Sudirman - Dumai</p>
+          <p id="receipt-store-address" class="text-[10px]">Jl. Merdeka No. 12, Jakarta</p>
           <p id="receipt-store-phone" class="text-[10px]">Telp: 08123456789</p>
         </div>
         
@@ -1118,8 +1118,8 @@ const firebaseConfig = {
       settings: {
         storeName: "Bakoelan Dimsum",
         phone: "081234567890",
-        address: "Jl. Sudirman - Dumai",
-        footerText: "Terima Kasih dan Selamat Menikmati!",
+        address: "Jl. Merdeka Raya Utama No. 42, Cabang Jakarta",
+        footerText: "Terima Kasih atas Kunjungan Anda!",
         taxRate: 10
       }
     };
@@ -1518,7 +1518,7 @@ const firebaseConfig = {
       // 2. Jika bukan akun kasir yang cocok, coba autentikasi sebagai OWNER
       if (IS_PREVIEW) {
         // Bypass login di preview mode
-        if (identity === "admin@bakoelandimsum.com" && credential === "owner123") {
+        if (identity === "owner@bakoelandimsum.com" && credential === "owner123") {
           currentUser = { uid: "guest-owner", name: "Owner Preview", role: "owner", outletId: "all" };
           sessionStorage.setItem("bakoelan_session", JSON.stringify(currentUser));
           applyUserRoleUI();
@@ -3245,37 +3245,16 @@ const firebaseConfig = {
       event.target.value = ''; // Reset input
     };
 
-    // Kosongkan Seluruh Data (Wipe)
+    // Kosongkan Riwayat Transaksi Saja
     window.wipeDatabase = function() {
       showConfirm(
-        "Hapus Seluruh Data?", 
-        "Tindakan ini akan menghapus semua menu produk, outlet, karyawan, dan seluruh riwayat transaksi secara permanen. Akun Owner default akan dipertahankan agar Anda tidak terkunci. Lanjutkan?", 
+        "Hapus Seluruh Riwayat Transaksi?", 
+        "Tindakan ini hanya akan menghapus seluruh riwayat transaksi penjualan secara permanen. Data menu produk, outlet, karyawan, dan akun login TIDAK akan terhapus. Lanjutkan?", 
         async () => {
-          const loadedProducts = [...appData.products];
           const loadedTransactions = [...appData.transactions];
-          const loadedOutlets = [...appData.outlets];
-          const loadedEmployees = [...appData.employees];
-          const loadedUsers = [...appData.users];
 
-          // Reset model data local ke kondisi awal yang bersih
-          appData.products = [];
+          // Hanya kosongkan riwayat transaksi, data lain tetap dipertahankan
           appData.transactions = [];
-          appData.outlets = [
-            { id: "OTL-001", name: "Gerai 1", contact: "08123456789", address: "Jl. Sudirman-Dumai" }
-          ];
-          appData.employees = [
-            { id: "EMP-003", name: "Super Admin", role: "Owner", phone: "08112233445", outletId: "OTL-001" }
-          ];
-          appData.users = [
-            { id: "ACC-003", employeeId: "EMP-003", name: "Super Admin", email: "admin@bakoelandimsum.com", password: "123", outletId: "OTL-001", role: "owner" }
-          ];
-          appData.settings = {
-            storeName: "Bakoelan Dimsum",
-            phone: "081234567890",
-            address: "Jl. Sudirman - Dumai",
-            footerText: "Terima Kasih dan Selamat Menikmati!",
-            taxRate: 10
-          };
 
           if (!IS_PREVIEW && dbRef) {
             try {
@@ -3283,32 +3262,14 @@ const firebaseConfig = {
               const pRef = dbRef.collection('artifacts').doc(appId).collection('public').doc('data');
 
               const batch = dbRef.batch();
-              for (let item of loadedProducts) {
-                batch.delete(pRef.collection('products').doc(item.id));
-              }
               for (let item of loadedTransactions) {
                 batch.delete(pRef.collection('transactions').doc(item.id));
               }
-              for (let item of loadedOutlets) {
-                batch.delete(pRef.collection('outlets').doc(item.id));
-              }
-              for (let item of loadedEmployees) {
-                batch.delete(pRef.collection('employees').doc(item.id));
-              }
-              for (let item of loadedUsers) {
-                batch.delete(pRef.collection('users').doc(item.id));
-              }
               await batch.commit();
-
-              // Menyuntikkan kembali akun Owner utama default di cloud
-              await pRef.collection('outlets').doc("OTL-001").set(appData.outlets[0]);
-              await pRef.collection('employees').doc("EMP-003").set(appData.employees[0]);
-              await pRef.collection('users').doc("ACC-003").set(appData.users[0]);
-              await pRef.collection('settings').doc('config').set(appData.settings);
 
               await loadFirebaseData();
             } catch (err) {
-              showToast("Gagal mengosongkan data di server cloud: " + err.message, "error");
+              showToast("Gagal menghapus riwayat transaksi di server cloud: " + err.message, "error");
             } finally {
               document.getElementById("loader").classList.add("opacity-0", "pointer-events-none");
             }
@@ -3316,7 +3277,7 @@ const firebaseConfig = {
             saveToLocalCache();
           }
 
-          showToast("Database berhasil dikosongkan!", "success");
+          showToast("Seluruh riwayat transaksi berhasil dihapus!", "success");
           switchTab('dashboard');
         }
       );
