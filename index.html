@@ -208,12 +208,12 @@
       <!-- Form Login Tunggal / Unified -->
       <form id="form-login-unified" class="space-y-5">
         <div>
-          <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Username Kasir / Email Owner</label>
+          <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Email Login</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
               <i class="fa-solid fa-user text-sm"></i>
             </span>
-            <input type="text" id="login-identity" class="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-emerald-500 transition text-sm font-semibold" placeholder="daus atau owner@bakoelandimsum.com" required>
+            <input type="email" id="login-identity" class="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-emerald-500 transition text-sm font-semibold" placeholder="kasir1@bakoelandimsum.com" required>
           </div>
         </div>
         <div>
@@ -923,8 +923,8 @@
           </select>
         </div>
         <div>
-          <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Username Login</label>
-          <input type="text" id="usr-username" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" required>
+          <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Email Login</label>
+          <input type="email" id="usr-email" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" placeholder="kasir1@bakoelandimsum.com" required>
         </div>
         <div>
           <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">PIN / Sandi Login (Min 4 Karakter)</label>
@@ -1366,19 +1366,90 @@ const firebaseConfig = {
     // ================= DUMMY DATABASE GENERATOR (AUTOSETUP) =================
     function autoSetupDatabase() {
       // 1. Cabang Outlet Awal
-      appData.outlets = [];
+      appData.outlets = [
+        { id: "OTL-001", name: "Outlet Pusat Jakarta", contact: "08123456789", address: "Jl. Merdeka No. 12" },
+        { id: "OTL-002", name: "Outlet Bogor", contact: "08198765432", address: "Jl. Pajajaran No. 8" },
+        { id: "OTL-003", name: "Outlet Depok Margonda", contact: "08121122334", address: "Jl. Margonda Raya No. 120" }
+      ];
 
-      // 2. Daftar Menu Dimsum & Minuman dengan Penugasan Outlet
-      appData.products = [];
+      // 2. Daftar Menu Dimsum & Minuman dengan Penugasan Outlet (dan Foto Optional sebagai demonstrasi)
+      appData.products = [
+        { id: "PRD-001", name: "Dimsum Siomay Ayam", price: 18000, category: "Makanan", stock: 150, emoji: "🥟", outletId: "all", imageUrl: "https://images.unsplash.com/photo-1496116211223-49a195501c65?auto=format&fit=crop&w=400&q=80" },
+        { id: "PRD-002", name: "Dimsum Hakau Udang", price: 22000, category: "Makanan", stock: 80, emoji: "🥟", outletId: "OTL-001", imageUrl: "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=400&q=80" },
+        { id: "PRD-003", name: "Dimsum Lumpia Kulit Tahu", price: 20000, category: "Makanan", stock: 120, emoji: "🥟", outletId: "all", imageUrl: "" }, // Kosong untuk menggunakan emoji fallback
+        { id: "PRD-004", name: "Kei-Chak (Dimsum Kaki Ayam)", price: 16000, category: "Makanan", stock: 45, emoji: "🐓", outletId: "OTL-001", imageUrl: "" },
+        { id: "PRD-005", name: "Dimsum Bakpao Telur Asin", price: 19000, category: "Makanan", stock: 90, emoji: "🥯", outletId: "OTL-002", imageUrl: "" },
+        { id: "PRD-006", name: "Es Teh Manis Selasih", price: 8000, category: "Minuman", stock: 300, emoji: "🥤", outletId: "all", imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=400&q=80" },
+        { id: "PRD-007", name: "Es Jeruk Peras Murni", price: 12000, category: "Minuman", stock: 100, emoji: "🍹", outletId: "all", imageUrl: "" },
+        { id: "PRD-008", name: "Badak Sarsaparilla", price: 15000, category: "Minuman", stock: 50, emoji: "🥤", outletId: "OTL-003", imageUrl: "" }
+      ];
 
       // 3. Data Karyawan (Hanya memiliki jabatan Owner atau Kasir)
-      appData.employees = [];
+      appData.employees = [
+        { id: "EMP-001", name: "Daus Achmad", role: "Kasir", phone: "08988776655", outletId: "OTL-001" },
+        { id: "EMP-002", name: "Anisa Fitri", role: "Kasir", phone: "08129988776", outletId: "OTL-002" },
+        { id: "EMP-003", name: "Dimas Saputra", role: "Owner", phone: "08112233445", outletId: "OTL-001" }
+      ];
 
       // 4. Akun Staf / Kasir
-      appData.users = [];
+      appData.users = [
+        { id: "ACC-001", employeeId: "EMP-001", name: "Daus Achmad", username: "daus", password: "123", outletId: "OTL-001", role: "kasir" },
+        { id: "ACC-002", employeeId: "EMP-002", name: "Anisa Fitri", username: "anisa", password: "123", outletId: "OTL-002", role: "kasir" }
+      ];
 
-      // 5. Histori Transaksi Penjualan
-      appData.transactions = [];
+      // 5. Histori Transaksi Penjualan Dummy
+      appData.transactions = [
+        { 
+          id: "TRX-4235", 
+          date: "2026-07-01T11:20:00.000Z", 
+          outletId: "OTL-001", 
+          cashierName: "Daus Achmad", 
+          items: [
+            { id: "PRD-001", name: "Dimsum Siomay Ayam", qty: 2, price: 18000 }
+          ],
+          subtotal: 36000,
+          tax: 3600,
+          taxRate: 10,
+          total: 39600,
+          paymentMethod: "Tunai",
+          cashReceived: 50000,
+          change: 10400
+        },
+        { 
+          id: "TRX-3264", 
+          date: "2026-06-30T15:45:00.000Z", 
+          outletId: "OTL-001", 
+          cashierName: "Daus Achmad", 
+          items: [
+            { id: "PRD-002", name: "Dimsum Hakau Udang", qty: 1, price: 22000 },
+            { id: "PRD-006", name: "Es Teh Manis Selasih", qty: 1, price: 8000 }
+          ],
+          subtotal: 30000,
+          tax: 3000,
+          taxRate: 10,
+          total: 33000,
+          paymentMethod: "QRIS",
+          cashReceived: 33000,
+          change: 0
+        },
+        { 
+          id: "TRX-5249", 
+          date: "2026-06-30T19:10:00.000Z", 
+          outletId: "OTL-001", 
+          cashierName: "Daus Achmad", 
+          items: [
+            { id: "PRD-003", name: "Dimsum Lumpia Kulit Tahu", qty: 4, price: 20000 },
+            { id: "PRD-007", name: "Es Jeruk Peras Murni", qty: 2, price: 12000 }
+          ],
+          subtotal: 104000,
+          tax: 10400,
+          taxRate: 10,
+          total: 114400,
+          paymentMethod: "Tunai",
+          cashReceived: 120000,
+          change: 5600
+        }
+      ];
 
       saveToLocalCache();
     }
@@ -1477,59 +1548,52 @@ const firebaseConfig = {
     // LOGIN UNIFIED LOGIC
     document.getElementById("form-login-unified").addEventListener("submit", async function(e) {
       e.preventDefault();
-      const identity = document.getElementById("login-identity").value.trim();
+      const identity = document.getElementById("login-identity").value.trim().toLowerCase();
       const credential = document.getElementById("login-credential").value;
 
-      const isEmail = identity.includes("@");
+      // 1. Cek dulu apakah email ini terdaftar sebagai akun KASIR (validasi lokal)
+      const kasirAccount = appData.users.find(u => u.email && u.email.toLowerCase() === identity && u.password === credential);
 
-      if (isEmail) {
-        // AUTENTIKASI OWNER
-        const email = identity.toLowerCase();
-        if (IS_PREVIEW) {
-          // Bypass login di preview mode
-          if (email === "owner@bakoelandimsum.com" && credential === "owner123") {
-            currentUser = { uid: "guest-owner", name: "Owner Preview", role: "owner", outletId: "all" };
-            sessionStorage.setItem("bakoelan_session", JSON.stringify(currentUser));
-            applyUserRoleUI();
-            document.getElementById("login-screen").classList.add("hidden");
-            showToast("Berhasil masuk sebagai Owner (Simulasi)", "success");
-            switchTab('dashboard');
-          } else {
-            showToast("Preview Login Owner: Gunakan owner@bakoelandimsum.com & owner123", "warning");
-          }
-        } else {
-          // Autentikasi sungguhan di Firebase Auth
-          try {
-            document.getElementById("loader").classList.remove("opacity-0", "pointer-events-none");
-            await authRef.signInWithEmailAndPassword(email, credential);
-            // Auth listener onAuthStateChanged will handle the rest
-            showToast("Login Owner Berhasil", "success");
-          } catch (err) {
-            showToast(err.message, "error");
-          } finally {
-            document.getElementById("loader").classList.add("opacity-0", "pointer-events-none");
-          }
-        }
-      } else {
+      if (kasirAccount) {
         // AUTENTIKASI KASIR
-        const usernameInput = identity.toLowerCase();
-        // Cari akun yang sesuai di data users
-        const account = appData.users.find(u => u.username.toLowerCase() === usernameInput && u.password === credential);
-        
-        if (account) {
-          currentUser = {
-            uid: account.id,
-            name: account.name,
-            role: "kasir",
-            outletId: account.outletId
-          };
+        currentUser = {
+          uid: kasirAccount.id,
+          name: kasirAccount.name,
+          role: "kasir",
+          outletId: kasirAccount.outletId
+        };
+        sessionStorage.setItem("bakoelan_session", JSON.stringify(currentUser));
+        applyUserRoleUI();
+        document.getElementById("login-screen").classList.add("hidden");
+        showToast(`Selamat bekerja, ${kasirAccount.name}!`, "success");
+        switchTab('pos');
+        return;
+      }
+
+      // 2. Jika bukan akun kasir yang cocok, coba autentikasi sebagai OWNER
+      if (IS_PREVIEW) {
+        // Bypass login di preview mode
+        if (identity === "owner@bakoelandimsum.com" && credential === "owner123") {
+          currentUser = { uid: "guest-owner", name: "Owner Preview", role: "owner", outletId: "all" };
           sessionStorage.setItem("bakoelan_session", JSON.stringify(currentUser));
           applyUserRoleUI();
           document.getElementById("login-screen").classList.add("hidden");
-          showToast(`Selamat bekerja, ${account.name}!`, "success");
-          switchTab('pos');
+          showToast("Berhasil masuk sebagai Owner (Simulasi)", "success");
+          switchTab('dashboard');
         } else {
-          showToast("Username Kasir atau PIN Salah!", "error");
+          showToast("Email atau Sandi Salah!", "error");
+        }
+      } else {
+        // Autentikasi sungguhan di Firebase Auth (khusus Owner)
+        try {
+          document.getElementById("loader").classList.remove("opacity-0", "pointer-events-none");
+          await authRef.signInWithEmailAndPassword(identity, credential);
+          // Auth listener onAuthStateChanged will handle the rest
+          showToast("Login Owner Berhasil", "success");
+        } catch (err) {
+          showToast("Email atau Sandi Salah!", "error");
+        } finally {
+          document.getElementById("loader").classList.add("opacity-0", "pointer-events-none");
         }
       }
     });
@@ -2657,7 +2721,7 @@ const firebaseConfig = {
                 </div>
               </div>
               <div class="space-y-1 text-xs text-slate-600 font-semibold">
-                <p>Username: <b class="text-slate-800">${usr.username}</b></p>
+                <p>Email: <b class="text-slate-800">${usr.email}</b></p>
                 <p>PIN Login: <span class="bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">Terproteksi</span></p>
                 <p>Otoritas Outlet: <span class="text-emerald-600">${outletName}</span></p>
               </div>
@@ -2686,7 +2750,7 @@ const firebaseConfig = {
         if (usr) {
           document.getElementById("user-account-id").value = usr.id;
           document.getElementById("usr-employee-id").value = usr.employeeId;
-          document.getElementById("usr-username").value = usr.username;
+          document.getElementById("usr-email").value = usr.email;
           document.getElementById("usr-password").value = usr.password;
         }
       }
@@ -2711,7 +2775,7 @@ const firebaseConfig = {
       const payload = {
         employeeId: empId,
         name: employee.name,
-        username: document.getElementById("usr-username").value.trim().toLowerCase(),
+        email: document.getElementById("usr-email").value.trim().toLowerCase(),
         password: document.getElementById("usr-password").value,
         outletId: employee.outletId,
         role: "kasir"
@@ -3163,7 +3227,7 @@ const firebaseConfig = {
             { id: "EMP-003", name: "Dimas Saputra", role: "Owner", phone: "08112233445", outletId: "OTL-001" }
           ];
           appData.users = [
-            { id: "ACC-003", employeeId: "EMP-003", name: "Dimas Saputra", username: "owner", password: "123", outletId: "OTL-001", role: "owner" }
+            { id: "ACC-003", employeeId: "EMP-003", name: "Dimas Saputra", email: "owner@bakoelandimsum.com", password: "123", outletId: "OTL-001", role: "owner" }
           ];
           appData.settings = {
             storeName: "Bakoelan Dimsum",
