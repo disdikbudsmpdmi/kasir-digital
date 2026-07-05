@@ -1362,11 +1362,15 @@ const firebaseConfig = {
       if (currentUser.role === 'kasir') {
         // Sembunyikan menu owner
         document.querySelectorAll('.owner-only').forEach(el => el.classList.add('hidden'));
-        // Paksa switch ke POS sebagai default tab
+        // Kunci filter outlet ke gerai tempat kasir ditugaskan (tidak bisa lihat/pindah outlet lain)
+        updateGlobalOutletFilterOptions();
+        // Paksa switch ke POS sebagai default tab, otomatis mengarah ke halaman outletnya sendiri
         setTimeout(() => switchTab('pos'), 100);
       } else {
         // Tampilkan semua menu jika owner
         document.querySelectorAll('.owner-only').forEach(el => el.classList.remove('hidden'));
+        // Owner bebas memilih outlet manapun, termasuk "Semua Outlet"
+        updateGlobalOutletFilterOptions();
       }
     }
 
@@ -1685,15 +1689,45 @@ const firebaseConfig = {
       });
     }
 
-    function updateUISelectMenus() {
-      // Filter Outlet di Header Top Bar
+    // Bangun ulang opsi filter outlet global sesuai peran yang sedang login.
+    // Kasir: dikunci hanya pada outlet tempat ia ditugaskan (tidak bisa lihat/pindah outlet lain).
+    // Owner: bebas memilih outlet manapun, termasuk "Semua Outlet".
+    function updateGlobalOutletFilterOptions() {
       const selectHeader = document.getElementById("global-outlet-filter");
-      const currentVal = selectHeader.value;
-      selectHeader.innerHTML = `<option value="all">Semua Outlet / Pusat</option>`;
-      appData.outlets.forEach(out => {
-        selectHeader.innerHTML += `<option value="${out.id}">${out.name}</option>`;
-      });
-      selectHeader.value = currentVal;
+      if (!selectHeader) return;
+
+      const isKasir = currentUser && currentUser.role === 'kasir';
+
+      if (isKasir && currentUser.outletId && currentUser.outletId !== 'all') {
+        const myOutlet = appData.outlets.find(o => o.id === currentUser.outletId);
+        const myOutletName = myOutlet ? myOutlet.name : "Outlet Saya";
+
+        selectHeader.innerHTML = `<option value="${currentUser.outletId}">${myOutletName}</option>`;
+        selectHeader.value = currentUser.outletId;
+        selectHeader.disabled = true;
+        selectHeader.title = "Kasir hanya dapat melihat outlet tempat ia ditugaskan.";
+        selectHeader.classList.add("opacity-70", "cursor-not-allowed");
+
+        globalActiveOutlet = currentUser.outletId;
+      } else {
+        const currentVal = selectHeader.value || "all";
+        selectHeader.innerHTML = `<option value="all">Semua Outlet / Pusat</option>`;
+        appData.outlets.forEach(out => {
+          selectHeader.innerHTML += `<option value="${out.id}">${out.name}</option>`;
+        });
+        selectHeader.disabled = false;
+        selectHeader.title = "";
+        selectHeader.classList.remove("opacity-70", "cursor-not-allowed");
+
+        const validValues = Array.from(selectHeader.options).map(o => o.value);
+        selectHeader.value = validValues.includes(currentVal) ? currentVal : "all";
+        globalActiveOutlet = selectHeader.value;
+      }
+    }
+
+    function updateUISelectMenus() {
+      // Filter Outlet di Header Top Bar (role-aware: kasir dikunci ke outletnya sendiri)
+      updateGlobalOutletFilterOptions();
 
       // Filter Penugasan Outlet di Form Karyawan
       const selectEmp = document.getElementById("emp-outlet");
