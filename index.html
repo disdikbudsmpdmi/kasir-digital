@@ -2112,6 +2112,16 @@ const firebaseConfig = {
       document.getElementById("print-receipt-modal").classList.add("hidden");
     }
 
+    // Cetak ulang struk untuk transaksi yang sudah tersimpan (dipanggil dari tombol "Struk" di Laporan Penjualan)
+    function reprintTransaction(id) {
+      const trx = appData.transactions.find(t => t.id === id);
+      if (!trx) {
+        showToast("Data transaksi tidak ditemukan!", "error");
+        return;
+      }
+      renderThermalReceipt(trx);
+    }
+
 
     // ================= TAB: PRODUK / MENU MANAGEMENT =================
     function loadProducts() {
