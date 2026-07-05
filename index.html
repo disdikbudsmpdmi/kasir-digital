@@ -828,7 +828,7 @@
           <input type="url" id="prod-image-url" oninput="previewProductImage()" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" placeholder="https://images.unsplash.com/... (Kosongkan untuk tampilan default)">
           <div id="prod-image-preview-wrap" class="mt-2 hidden">
             <div class="w-20 h-20 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center">
-              <img id="prod-image-preview" class="w-full h-full object-cover hidden" onload="document.getElementById('prod-image-preview').classList.remove('hidden'); document.getElementById('prod-image-preview-status').innerText='✅ Gambar berhasil dimuat'; document.getElementById('prod-image-preview-status').className='text-[10px] text-emerald-600 font-bold mt-1';" onerror="document.getElementById('prod-image-preview').classList.add('hidden'); document.getElementById('prod-image-preview-status').innerText='❌ Link ini bukan link gambar langsung (coba pakai opsi \'Direct Link\' dari situs hosting-nya)'; document.getElementById('prod-image-preview-status').className='text-[10px] text-red-500 font-bold mt-1';">
+              <img id="prod-image-preview" class="w-full h-full object-cover hidden">
               <i class="fa-solid fa-spinner fa-spin text-slate-300"></i>
             </div>
             <p id="prod-image-preview-status" class="text-[10px] text-slate-400 font-bold mt-1">Memeriksa link...</p>
@@ -2323,13 +2323,58 @@ const firebaseConfig = {
       previewProductImage();
     }
 
+    // Cek apakah sebuah URL bisa langsung dimuat sebagai gambar
+    function testImageLoads(url) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        const timer = setTimeout(() => resolve(false), 8000);
+        img.onload = () => { clearTimeout(timer); resolve(true); };
+        img.onerror = () => { clearTimeout(timer); resolve(false); };
+        img.src = url;
+      });
+    }
+
+    // Terima "segala jenis link yang berisi gambar": jika link bukan file gambar langsung,
+    // coba ambil HTML halamannya (lewat proxy CORS) dan cari gambar utamanya (meta og:image /
+    // twitter:image / tag <img> pertama). Mengembalikan URL gambar langsung yang siap dipakai, atau null.
+    async function resolveImageUrl(rawUrl) {
+      const url = rawUrl.trim();
+      if (!url) return null;
+
+      // 1. Coba sebagai link gambar langsung dulu
+      if (await testImageLoads(url)) return url;
+
+      // 2. Bukan gambar langsung -> anggap halaman web, cari gambar utamanya
+      try {
+        const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
+        const res = await fetch(proxyUrl);
+        if (!res.ok) return null;
+        const html = await res.text();
+
+        const match =
+          html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
+          html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i) ||
+          html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i) ||
+          html.match(/<img[^>]+src=["']([^"']+)["']/i);
+
+        if (!match) return null;
+
+        const candidate = new URL(match[1], url).href;
+        return (await testImageLoads(candidate)) ? candidate : null;
+      } catch (err) {
+        console.error("Gagal mengambil gambar otomatis dari link:", err);
+        return null;
+      }
+    }
+
+    let productImageResolveTimer = null;
     function previewProductImage() {
-      const url = document.getElementById("prod-image-url").value.trim();
+      const rawUrl = document.getElementById("prod-image-url").value.trim();
       const wrap = document.getElementById("prod-image-preview-wrap");
       const img = document.getElementById("prod-image-preview");
       const status = document.getElementById("prod-image-preview-status");
 
-      if (!url) {
+      if (!rawUrl) {
         wrap.classList.add("hidden");
         return;
       }
@@ -2338,8 +2383,25 @@ const firebaseConfig = {
       img.classList.add("hidden");
       status.innerText = "Memeriksa link...";
       status.className = "text-[10px] text-slate-400 font-bold mt-1";
-      // Trigger ulang load gambar (ganti src memaksa browser mengecek ulang)
-      img.src = url;
+
+      // Debounce supaya tidak nembak request tiap ketikan huruf
+      clearTimeout(productImageResolveTimer);
+      productImageResolveTimer = setTimeout(async () => {
+        const resolved = await resolveImageUrl(rawUrl);
+        // Pastikan input belum berubah lagi saat proses berjalan
+        if (document.getElementById("prod-image-url").value.trim() !== rawUrl) return;
+
+        if (resolved) {
+          img.src = resolved;
+          img.classList.remove("hidden");
+          status.innerText = resolved === rawUrl ? "✅ Gambar berhasil dimuat" : "✅ Gambar ditemukan otomatis dari halaman tersebut";
+          status.className = "text-[10px] text-emerald-600 font-bold mt-1";
+        } else {
+          img.classList.add("hidden");
+          status.innerText = "❌ Tidak ditemukan gambar yang bisa dimuat dari link ini";
+          status.className = "text-[10px] text-red-500 font-bold mt-1";
+        }
+      }, 600);
     }
 
     function closeProductModal() {
@@ -2349,12 +2411,26 @@ const firebaseConfig = {
     document.getElementById("product-form").addEventListener("submit", async function(e) {
       e.preventDefault();
       const id = document.getElementById("product-id").value;
+      const rawImageUrl = document.getElementById("prod-image-url").value.trim();
+
+      // Selesaikan dulu link foto (bisa jadi link halaman web) menjadi link gambar langsung sebelum disimpan
+      let finalImageUrl = "";
+      if (rawImageUrl) {
+        document.getElementById("loader").classList.remove("opacity-0", "pointer-events-none");
+        const resolved = await resolveImageUrl(rawImageUrl);
+        document.getElementById("loader").classList.add("opacity-0", "pointer-events-none");
+        if (!resolved) {
+          showToast("Link foto tidak bisa dimuat sebagai gambar, produk tetap disimpan tanpa foto.", "warning");
+        }
+        finalImageUrl = resolved || "";
+      }
+
       const payload = {
         name: document.getElementById("prod-name").value.trim(),
         category: document.getElementById("prod-category").value,
         stock: parseInt(document.getElementById("prod-stock").value) || 0,
         price: parseInt(document.getElementById("prod-price").value) || 0,
-        imageUrl: document.getElementById("prod-image-url").value.trim(),
+        imageUrl: finalImageUrl,
         outletId: document.getElementById("prod-outlet").value
       };
 
