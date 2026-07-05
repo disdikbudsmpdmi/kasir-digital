@@ -195,7 +195,7 @@
           <i class="fa-solid fa-utensils text-2xl text-white"></i>
         </div>
         <h2 class="text-2xl font-extrabold text-slate-800 mt-4">Bakoelan Dimsum</h2>
-        <p class="text-slate-500 text-sm mt-1">Sistem Manajemen KASIR & Outlet Terpadu</p>
+        <p class="text-slate-500 text-sm mt-1">Sistem Manajemen POS & Outlet Terpadu</p>
       </div>
 
       <!-- Mode Preview Indicator -->
@@ -231,7 +231,7 @@
       </form>
 
       <div class="mt-6 text-center text-xs text-slate-400 font-medium">
-        v2.5 &copy; 2026 AL.K
+        v2.5 &copy; 2026 Bakoelan Dimsum Group
       </div>
     </div>
   </div>
@@ -819,19 +819,13 @@
             <input type="number" id="prod-stock" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" required>
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Harga Jual (Rupiah)</label>
-            <input type="number" id="prod-price" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" required>
-          </div>
-          <div>
-            <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Emoji Visual</label>
-            <input type="text" id="prod-emoji" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" placeholder="Contoh: 🥟, 🥤">
-          </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Harga Jual (Rupiah)</label>
+          <input type="number" id="prod-price" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" required>
         </div>
         <div>
           <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Link URL Foto Produk (Opsional)</label>
-          <input type="url" id="prod-image-url" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" placeholder="https://images.unsplash.com/... (Kosongkan jika ingin memakai emoji)">
+          <input type="url" id="prod-image-url" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" placeholder="https://images.unsplash.com/... (Kosongkan untuk tampilan default)">
         </div>
         <div>
           <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Penugasan Outlet Cabang</label>
@@ -924,7 +918,7 @@
         </div>
         <div>
           <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Email Login</label>
-          <input type="email" id="usr-email" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" placeholder="masukkan email yang terdaftar" required>
+          <input type="email" id="usr-email" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" placeholder="kasir1@bakoelandimsum.com" required>
         </div>
         <div>
           <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">PIN / Sandi Login (Min 4 Karakter)</label>
@@ -1374,14 +1368,14 @@ const firebaseConfig = {
 
       // 2. Daftar Menu Dimsum & Minuman dengan Penugasan Outlet (dan Foto Optional sebagai demonstrasi)
       appData.products = [
-        { id: "PRD-001", name: "Dimsum Siomay Ayam", price: 18000, category: "Makanan", stock: 150, emoji: "🥟", outletId: "all", imageUrl: "https://images.unsplash.com/photo-1496116211223-49a195501c65?auto=format&fit=crop&w=400&q=80" },
-        { id: "PRD-002", name: "Dimsum Hakau Udang", price: 22000, category: "Makanan", stock: 80, emoji: "🥟", outletId: "OTL-001", imageUrl: "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=400&q=80" },
-        { id: "PRD-003", name: "Dimsum Lumpia Kulit Tahu", price: 20000, category: "Makanan", stock: 120, emoji: "🥟", outletId: "all", imageUrl: "" }, // Kosong untuk menggunakan emoji fallback
-        { id: "PRD-004", name: "Kei-Chak (Dimsum Kaki Ayam)", price: 16000, category: "Makanan", stock: 45, emoji: "🐓", outletId: "OTL-001", imageUrl: "" },
-        { id: "PRD-005", name: "Dimsum Bakpao Telur Asin", price: 19000, category: "Makanan", stock: 90, emoji: "🥯", outletId: "OTL-002", imageUrl: "" },
-        { id: "PRD-006", name: "Es Teh Manis Selasih", price: 8000, category: "Minuman", stock: 300, emoji: "🥤", outletId: "all", imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=400&q=80" },
-        { id: "PRD-007", name: "Es Jeruk Peras Murni", price: 12000, category: "Minuman", stock: 100, emoji: "🍹", outletId: "all", imageUrl: "" },
-        { id: "PRD-008", name: "Badak Sarsaparilla", price: 15000, category: "Minuman", stock: 50, emoji: "🥤", outletId: "OTL-003", imageUrl: "" }
+        { id: "PRD-001", name: "Dimsum Siomay Ayam", price: 18000, category: "Makanan", stock: 150, outletId: "all", imageUrl: "https://images.unsplash.com/photo-1496116211223-49a195501c65?auto=format&fit=crop&w=400&q=80" },
+        { id: "PRD-002", name: "Dimsum Hakau Udang", price: 22000, category: "Makanan", stock: 80, outletId: "OTL-001", imageUrl: "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=400&q=80" },
+        { id: "PRD-003", name: "Dimsum Lumpia Kulit Tahu", price: 20000, category: "Makanan", stock: 120, outletId: "all", imageUrl: "" },
+        { id: "PRD-004", name: "Kei-Chak (Dimsum Kaki Ayam)", price: 16000, category: "Makanan", stock: 45, outletId: "OTL-001", imageUrl: "" },
+        { id: "PRD-005", name: "Dimsum Bakpao Telur Asin", price: 19000, category: "Makanan", stock: 90, outletId: "OTL-002", imageUrl: "" },
+        { id: "PRD-006", name: "Es Teh Manis Selasih", price: 8000, category: "Minuman", stock: 300, outletId: "all", imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=400&q=80" },
+        { id: "PRD-007", name: "Es Jeruk Peras Murni", price: 12000, category: "Minuman", stock: 100, outletId: "all", imageUrl: "" },
+        { id: "PRD-008", name: "Badak Sarsaparilla", price: 15000, category: "Minuman", stock: 50, outletId: "OTL-003", imageUrl: "" }
       ];
 
       // 3. Data Karyawan (Hanya memiliki jabatan Owner atau Kasir)
@@ -1836,19 +1830,19 @@ const firebaseConfig = {
       filtered.forEach(p => {
         const isOutOfStock = p.stock <= 0;
         
-        // Buat visual produk interaktif dengan lapisan emoji di latar belakang (z-0) dan foto di atasnya (z-10)
+        // Visual produk murni dari foto (link URL). Jika tidak ada foto, tampilkan ikon placeholder.
         let visualContainer = '';
         if (p.imageUrl && p.imageUrl.trim() !== '') {
           visualContainer = `
             <div class="h-24 w-full overflow-hidden rounded-xl bg-slate-100 flex items-center justify-center relative">
-              <span class="absolute text-3xl z-0">${p.emoji || '🥟'}</span>
+              <i class="fa-solid fa-image text-slate-300 text-2xl absolute"></i>
               <img src="${p.imageUrl}" alt="${p.name}" class="w-full h-full object-cover relative z-10" onerror="this.style.display='none'">
             </div>
           `;
         } else {
           visualContainer = `
             <div class="h-24 w-full overflow-hidden rounded-xl bg-emerald-50 flex items-center justify-center">
-              <span class="text-4xl">${p.emoji || '🥟'}</span>
+              <i class="fa-solid fa-utensils text-emerald-300 text-2xl"></i>
             </div>
           `;
         }
@@ -2208,12 +2202,12 @@ const firebaseConfig = {
         const outlet = appData.outlets.find(o => o.id === p.outletId);
         const outletName = p.outletId === 'all' || !p.outletId ? 'Semua Outlet' : (outlet ? outlet.name : 'Unknown');
 
-        // Render Baris Tabel dengan Lapisan Penyangga (Placeholder) Emoji yang Aman tanpa DOM crash
+        // Render Baris Tabel dengan thumbnail murni dari foto (link URL)
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50 transition border-b border-slate-100">
             <td class="py-4 px-6 flex items-center gap-3">
               <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden shrink-0 border border-slate-200 shadow-sm relative">
-                <span class="absolute text-xl z-0">${p.emoji || '🥟'}</span>
+                <i class="fa-solid fa-utensils text-slate-300 text-sm absolute"></i>
                 ${(p.imageUrl && p.imageUrl.trim() !== '') ? `
                   <img src="${p.imageUrl}" alt="${p.name}" class="w-full h-full object-cover relative z-10" onerror="this.style.display='none'">
                 ` : ''}
@@ -2314,7 +2308,6 @@ const firebaseConfig = {
           document.getElementById("prod-category").value = p.category;
           document.getElementById("prod-stock").value = p.stock;
           document.getElementById("prod-price").value = p.price;
-          document.getElementById("prod-emoji").value = p.emoji || "🥟";
           document.getElementById("prod-image-url").value = p.imageUrl || "";
           prodOutletSelect.value = p.outletId || "all";
         }
@@ -2334,7 +2327,6 @@ const firebaseConfig = {
         category: document.getElementById("prod-category").value,
         stock: parseInt(document.getElementById("prod-stock").value) || 0,
         price: parseInt(document.getElementById("prod-price").value) || 0,
-        emoji: document.getElementById("prod-emoji").value.trim() || "🥟",
         imageUrl: document.getElementById("prod-image-url").value.trim(),
         outletId: document.getElementById("prod-outlet").value
       };
