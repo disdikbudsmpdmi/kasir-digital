@@ -86,14 +86,33 @@
       body * {
         visibility: hidden;
       }
-      #print-receipt-modal, #print-receipt-modal * {
+      
+      /* Mode cetak struk */
+      body.printing-receipt #print-receipt-modal,
+      body.printing-receipt #print-receipt-modal * {
         visibility: visible;
       }
-      #print-receipt-modal {
+      body.printing-receipt #print-receipt-modal {
         position: absolute;
         left: 0;
         top: 0;
         width: 100%;
+        box-shadow: none !important;
+        border: none !important;
+        background: white !important;
+      }
+      
+      /* Mode cetak laporan PDF (Gaya mirip Invoice referensi) */
+      body.printing-report #print-report-area,
+      body.printing-report #print-report-area * {
+        visibility: visible;
+      }
+      body.printing-report #print-report-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        display: block !important;
         box-shadow: none !important;
         border: none !important;
         background: white !important;
@@ -167,7 +186,7 @@
     </div>
   </div>
 
-  <!-- ================= SCREEN LOGIN ================= -->
+  <!-- ================= SCREEN LOGIN (UNIFIED) ================= -->
   <div id="login-screen" class="fixed inset-0 z-50 bg-slate-50 flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-cover bg-center opacity-10" style="background-image: url('https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=1200&q=80');"></div>
     <div class="bg-white/80 backdrop-blur-md rounded-3xl p-8 max-w-md w-full border border-slate-200 shadow-2xl relative z-10">
@@ -179,16 +198,6 @@
         <p class="text-slate-500 text-sm mt-1">Sistem Manajemen POS & Outlet Terpadu</p>
       </div>
 
-      <!-- Tab Login -->
-      <div class="flex bg-slate-100 p-1.5 rounded-2xl mb-6">
-        <button id="btn-tab-kasir" class="flex-1 py-2.5 rounded-xl font-bold text-sm bg-white text-slate-800 shadow-sm transition duration-300">
-          <i class="fa-solid fa-cash-register mr-2"></i>Kasir
-        </button>
-        <button id="btn-tab-owner" class="flex-1 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:text-slate-800 transition duration-300">
-          <i class="fa-solid fa-user-shield mr-2"></i>Owner
-        </button>
-      </div>
-
       <!-- Mode Preview Indicator -->
       <div id="preview-badge" class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-center mb-6">
         <p class="text-xs text-amber-700 font-medium">
@@ -196,53 +205,28 @@
         </p>
       </div>
 
-      <!-- Form Login Kasir (Firestore Auth-Doc) -->
-      <form id="form-login-kasir" class="space-y-4">
+      <!-- Form Login Tunggal / Unified -->
+      <form id="form-login-unified" class="space-y-5">
         <div>
-          <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Username Kasir</label>
+          <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Username Kasir / Email Owner</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
               <i class="fa-solid fa-user text-sm"></i>
             </span>
-            <input type="text" id="kasir-username" class="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-emerald-500 transition text-sm font-semibold" placeholder="Masukkan Username Kasir" required>
+            <input type="text" id="login-identity" class="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-emerald-500 transition text-sm font-semibold" placeholder="daus atau owner@bakoelandimsum.com" required>
           </div>
         </div>
         <div>
-          <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">PIN / Password</label>
-          <div class="relative">
-            <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-              <i class="fa-solid fa-key text-sm"></i>
-            </span>
-            <input type="password" id="kasir-password" class="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-emerald-500 transition text-sm font-semibold tracking-wider" placeholder="Masukkan PIN" required>
-          </div>
-        </div>
-        <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-2xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-600/20 active:scale-95 duration-100 mt-2">
-          Masuk Sebagai Kasir
-        </button>
-      </form>
-
-      <!-- Form Login Owner (Firebase Authentication) -->
-      <form id="form-login-owner" class="space-y-4 hidden">
-        <div>
-          <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Email Owner</label>
-          <div class="relative">
-            <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-              <i class="fa-solid fa-envelope text-sm"></i>
-            </span>
-            <input type="email" id="owner-email" class="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-emerald-500 transition text-sm font-semibold" placeholder="owner@bakoelandimsum.com">
-          </div>
-        </div>
-        <div>
-          <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Password</label>
+          <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">PIN / Kata Sandi</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
               <i class="fa-solid fa-lock text-sm"></i>
             </span>
-            <input type="password" id="owner-password" class="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-emerald-500 transition text-sm font-semibold" placeholder="••••••••">
+            <input type="password" id="login-credential" class="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-emerald-500 transition text-sm font-semibold tracking-wider" placeholder="••••••••" required>
           </div>
         </div>
-        <button type="submit" class="w-full bg-slate-900 text-white font-bold py-3.5 rounded-2xl hover:bg-slate-800 transition shadow-lg shadow-slate-900/20 active:scale-95 duration-100 mt-2">
-          Masuk Sebagai Owner
+        <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3.5 rounded-2xl hover:bg-emerald-700 transition shadow-lg shadow-emerald-600/20 active:scale-95 duration-100 mt-2">
+          Masuk Sebagai User
         </button>
       </form>
 
@@ -326,7 +310,7 @@
   </aside>
 
   <!-- ================= LAYOUT UTAMA (MOBILE BOTTOM NAV) ================= -->
-  <nav class="no-print md:hidden fixed bottom-0 left-0 right-0 glass-card border-t border-slate-200 flex justify-around items-center p-3 z-40 shadow-xl rounded-t-3xl">
+  <nav class="no-print md:hidden fixed bottom-0 left-0 right-0 glass-card border-t border-slate-200 flex justify-around items-center p-3.5 z-40 shadow-xl rounded-t-3xl">
     <button onclick="switchTab('dashboard')" data-mobile-tab="dashboard" class="flex flex-col items-center gap-1 text-emerald-600">
       <i class="fa-solid fa-chart-line text-lg"></i>
       <span class="text-[9px] font-bold">Dashboard</span>
@@ -335,19 +319,58 @@
       <i class="fa-solid fa-cash-register text-lg"></i>
       <span class="text-[9px] font-bold">POS Kasir</span>
     </button>
-    <button onclick="switchTab('produk')" data-mobile-tab="produk" class="flex flex-col items-center gap-1 text-slate-400 owner-only">
-      <i class="fa-solid fa-bowl-food text-lg"></i>
-      <span class="text-[9px] font-bold">Menu</span>
-    </button>
     <button onclick="switchTab('laporan')" data-mobile-tab="laporan" class="flex flex-col items-center gap-1 text-slate-400">
       <i class="fa-solid fa-file-invoice-dollar text-lg"></i>
       <span class="text-[9px] font-bold">Laporan</span>
     </button>
-    <button onclick="triggerLogout()" class="flex flex-col items-center gap-1 text-red-400">
-      <i class="fa-solid fa-power-off text-lg"></i>
-      <span class="text-[9px] font-bold">Keluar</span>
+    <!-- Tombol "Lainnya" untuk memicu slide-up drawer menu mobile -->
+    <button onclick="toggleMobileMoreMenu()" id="btn-mobile-more" class="flex flex-col items-center gap-1 text-slate-400">
+      <i class="fa-solid fa-bars text-lg"></i>
+      <span class="text-[9px] font-bold">Lainnya</span>
     </button>
   </nav>
+
+  <!-- ================= SLIDE-UP BOTTOM SHEET MENU MOBILE ================= -->
+  <div id="mobile-more-menu-backdrop" onclick="toggleMobileMoreMenu()" class="no-print fixed inset-0 bg-black/40 z-40 hidden backdrop-blur-sm transition-opacity duration-300 opacity-0"></div>
+  <div id="mobile-more-menu-sheet" class="no-print fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl z-50 p-6 flex flex-col gap-4 transform translate-y-full transition-transform duration-300 max-h-[75vh] overflow-y-auto">
+    <!-- Header Drawer -->
+    <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-2">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-compass-drafting text-emerald-600"></i>
+        <h4 class="font-bold text-sm text-slate-800">Menu Manajemen Tambahan</h4>
+      </div>
+      <button onclick="toggleMobileMoreMenu()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+    </div>
+    
+    <!-- List Menu Di dalam Sheet -->
+    <div class="grid grid-cols-2 gap-3">
+      <button onclick="switchTabMobile('produk')" class="owner-only flex flex-col items-center gap-2.5 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-emerald-500/20 active:scale-95 transition">
+        <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center"><i class="fa-solid fa-bowl-food text-base"></i></div>
+        <span class="text-xs font-bold text-slate-700">Produk / Menu</span>
+      </button>
+      <button onclick="switchTabMobile('outlet')" class="owner-only flex flex-col items-center gap-2.5 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-emerald-500/20 active:scale-95 transition">
+        <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center"><i class="fa-solid fa-store text-base"></i></div>
+        <span class="text-xs font-bold text-slate-700">Outlet Toko</span>
+      </button>
+      <button onclick="switchTabMobile('karyawan')" class="owner-only flex flex-col items-center gap-2.5 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-emerald-500/20 active:scale-95 transition">
+        <div class="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center"><i class="fa-solid fa-users text-base"></i></div>
+        <span class="text-xs font-bold text-slate-700">Karyawan</span>
+      </button>
+      <button onclick="switchTabMobile('manajemen-user')" class="owner-only flex flex-col items-center gap-2.5 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-emerald-500/20 active:scale-95 transition">
+        <div class="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center"><i class="fa-solid fa-users-gear text-base"></i></div>
+        <span class="text-xs font-bold text-slate-700">Manajemen User</span>
+      </button>
+      <button onclick="switchTabMobile('pengaturan')" class="owner-only flex flex-col items-center gap-2.5 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-emerald-500/20 active:scale-95 transition">
+        <div class="w-10 h-10 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center"><i class="fa-solid fa-sliders text-base"></i></div>
+        <span class="text-xs font-bold text-slate-700">Pengaturan</span>
+      </button>
+      <button onclick="triggerLogoutMobile()" class="flex flex-col items-center gap-2.5 p-4 rounded-2xl bg-red-50 border border-red-100 active:scale-95 transition col-span-2">
+        <div class="w-10 h-10 bg-red-500 text-white rounded-xl flex items-center justify-center shadow-md shadow-red-500/20"><i class="fa-solid fa-right-from-bracket text-base"></i></div>
+        <span class="text-xs font-bold text-red-700">Keluar dari Akun</span>
+      </button>
+    </div>
+  </div>
+
 
   <!-- ================= LAYOUT UTAMA (KONTEN UTAMA) ================= -->
   <main class="flex-1 md:h-screen pb-24 md:pb-6 p-4 md:p-8 overflow-y-auto">
@@ -416,7 +439,7 @@
         <div class="glass-card p-4 md:p-6 rounded-3xl flex items-center justify-between shadow-sm relative overflow-hidden group">
           <div class="space-y-1">
             <span class="text-[10px] md:text-xs font-bold uppercase text-slate-400">TOTAL OUTLET</span>
-            <h3 id="stat-sales" class="text-lg md:text-2xl font-extrabold text-slate-800">0</h3>
+            <h3 id="stat-outlets" class="text-lg md:text-2xl font-extrabold text-slate-800">0</h3>
           </div>
           <div class="w-10 h-10 md:w-14 md:h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110">
             <i class="fa-solid fa-store text-base md:text-xl"></i>
@@ -587,6 +610,10 @@
             </tbody>
           </table>
         </div>
+        <!-- Pagination Container for Products -->
+        <div id="product-pagination-container" class="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-bold text-slate-500">
+          <!-- Will be populated dynamically -->
+        </div>
       </div>
     </section>
 
@@ -632,6 +659,10 @@
             </tbody>
           </table>
         </div>
+        <!-- Pagination Container for Employees -->
+        <div id="employee-pagination-container" class="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-bold text-slate-500">
+          <!-- Will be populated dynamically -->
+        </div>
       </div>
     </section>
 
@@ -653,7 +684,7 @@
     <!-- ================= TAB: LAPORAN ================= -->
     <section id="tab-laporan" class="tab-content hidden space-y-6">
       <!-- Report Filters -->
-      <div class="glass-card rounded-3xl p-6 shadow-sm flex flex-col md:flex-row items-end gap-4">
+      <div class="glass-card rounded-3xl p-6 shadow-sm flex flex-col xl:flex-row items-end gap-4">
         <div class="flex-1 w-full">
           <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Tanggal Awal</label>
           <input type="date" id="report-start-date" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold bg-white">
@@ -662,9 +693,15 @@
           <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Tanggal Akhir</label>
           <input type="date" id="report-end-date" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold bg-white">
         </div>
-        <div class="w-full md:w-auto">
-          <button onclick="filterReports()" class="w-full px-6 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl hover:bg-emerald-700 transition flex items-center justify-center gap-2">
-            <i class="fa-solid fa-filter"></i> Saring Data
+        <div class="w-full xl:w-auto flex flex-wrap sm:flex-nowrap gap-2">
+          <button onclick="filterReports()" class="flex-1 sm:flex-initial px-5 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl hover:bg-emerald-700 transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-filter"></i> Saring
+          </button>
+          <button onclick="printFilteredReports()" class="flex-1 sm:flex-initial px-5 py-2.5 bg-blue-600 text-white font-bold text-xs rounded-xl hover:bg-blue-700 transition flex items-center justify-center gap-2 whitespace-nowrap">
+            <i class="fa-solid fa-file-pdf"></i> Cetak Laporan (PDF)
+          </button>
+          <button onclick="exportReportsToXLS()" class="flex-1 sm:flex-initial px-5 py-2.5 bg-emerald-700 text-white font-bold text-xs rounded-xl hover:bg-emerald-800 transition flex items-center justify-center gap-2 whitespace-nowrap">
+            <i class="fa-solid fa-file-excel"></i> Ekspor (XLS)
           </button>
         </div>
       </div>
@@ -687,6 +724,10 @@
               <!-- Dynamic Reports Table Rows -->
             </tbody>
           </table>
+        </div>
+        <!-- Pagination Container for Reports -->
+        <div id="report-pagination-container" class="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-bold text-slate-500">
+          <!-- Will be populated dynamically -->
         </div>
       </div>
     </section>
@@ -740,7 +781,7 @@
           <button onclick="backupDatabase()" type="button" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-sm">
             <i class="fa-solid fa-download"></i> Ekspor Data (Backup)
           </button>
-          <label class="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-sm cursor-pointer">
+          <label class="px-4 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-sm cursor-pointer">
             <i class="fa-solid fa-upload"></i> Impor Data (Restore)
             <input type="file" id="restore-file-input" onchange="restoreDatabase(event)" class="hidden" accept=".json">
           </label>
@@ -975,10 +1016,66 @@
 
       <!-- Button Print & Export -->
       <div class="flex gap-3 mt-4 no-print">
-        <button onclick="window.print()" class="flex-1 py-3 bg-emerald-600 text-white font-bold text-xs rounded-xl hover:bg-emerald-700 transition">
+        <button onclick="printReceipt()" class="flex-1 py-3 bg-emerald-600 text-white font-bold text-xs rounded-xl hover:bg-emerald-700 transition">
           <i class="fa-solid fa-print mr-1"></i> Cetak Sekarang
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ================= PRINT REPORT AREA (HIDDEN FROM SCREEN, FOR PDF ONLY) ================= -->
+  <!-- Konsep desain premium korporat hijau, meniru struktur tabel dan total omset dari template referensi -->
+  <div id="print-report-area" class="hidden font-sans p-10 bg-white text-slate-800">
+    <div class="flex justify-between items-start border-b-4 border-emerald-600 pb-6 mb-6">
+      <div>
+        <h1 class="text-3xl font-extrabold text-emerald-600 tracking-tight">BAKOELAN DIMSUM</h1>
+        <p class="text-xs text-slate-500 font-bold uppercase mt-1">Sistem POS & Outlet Terpadu</p>
+        <p class="text-xs text-slate-400 mt-3" id="print-report-outlet-name">Outlet: Semua Outlet / Pusat</p>
+        <p class="text-xs text-slate-400" id="print-report-date-range">Periode Laporan: -</p>
+      </div>
+      <div class="text-right">
+        <h2 class="text-2xl font-black text-slate-800 tracking-wide uppercase">LAPORAN PENJUALAN</h2>
+        <p class="text-xs text-slate-400 mt-2">Dicetak Oleh: <span id="print-report-by" class="font-bold text-slate-700">-</span></p>
+        <p class="text-xs text-slate-400">Waktu Cetak: <span id="print-report-generation-time" class="font-bold text-slate-700">-</span></p>
+      </div>
+    </div>
+
+    <!-- Tabel Detail Laporan -->
+    <table class="w-full text-left border-collapse text-xs mb-8">
+      <thead>
+        <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-300">
+          <th class="p-3">ID Transaksi</th>
+          <th class="p-3">Tanggal & Kasir</th>
+          <th class="p-3">Daftar Item Menu Terjual</th>
+          <th class="p-3">Metode</th>
+          <th class="p-3 text-right">Total Transaksi</th>
+        </tr>
+      </thead>
+      <tbody id="print-report-table-body" class="divide-y divide-slate-200">
+        <!-- Baris data transaksi laporan dinamis -->
+      </tbody>
+    </table>
+
+    <!-- Ringkasan Keuangan Laporan (Model Kotak Sisi Kanan seperti gambar referensi) -->
+    <div class="flex justify-end">
+      <div class="w-80 bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-3 text-xs font-semibold">
+        <div class="flex justify-between items-center text-slate-500">
+          <span>Jumlah Transaksi:</span>
+          <span id="print-report-total-trx" class="text-slate-800 font-extrabold text-sm">0</span>
+        </div>
+        <div class="flex justify-between items-center text-slate-500">
+          <span>Total Pajak PB1 Terkumpul:</span>
+          <span id="print-report-total-tax" class="text-slate-800 font-bold">Rp 0</span>
+        </div>
+        <div class="flex justify-between items-center text-emerald-600 font-black text-sm border-t border-dashed border-slate-300 pt-3">
+          <span>Total Omset Akhir:</span>
+          <span id="print-report-total-sales" class="text-emerald-600 text-base">Rp 0</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-16 text-center text-[10px] text-slate-400 border-t border-slate-100 pt-4">
+      Laporan ini digenerate secara otomatis oleh modul akuntansi pintar Bakoelan Dimsum POS.
     </div>
   </div>
 
@@ -992,7 +1089,7 @@
   <!-- Script Logika Client-Side -->
   <script>
     // ================= SAKLAR DEPLOYMENT & KONFIGURASI =================
-    const IS_PREVIEW = false; // Set FALSE jika Anda sudah memasukkan config Firebase Anda sendiri.
+    const IS_PREVIEW = FALSE; // Set FALSE jika Anda sudah memasukkan config Firebase Anda sendiri.
     
 const firebaseConfig = {
   apiKey: "AIzaSyDbbCkcIwbh7X-9LHeRvwcEqBLZFdeo-EE",
@@ -1025,6 +1122,11 @@ const firebaseConfig = {
         taxRate: 10
       }
     };
+
+    // Pagination Global State
+    let productPagination = { currentPage: 1, pageSize: 10 };
+    let employeePagination = { currentPage: 1, pageSize: 10 };
+    let reportPagination = { currentPage: 1, pageSize: 10 };
 
     // POS Active State
     let cart = [];
@@ -1117,7 +1219,7 @@ const firebaseConfig = {
           // Memantau Auth State
           authRef.onAuthStateChanged(async (user) => {
             if (user) {
-              // Terautentikasi sebagai Owner di Firebase
+              // Jika ini login owner via Auth
               currentUser = {
                 uid: user.uid,
                 name: "Owner",
@@ -1198,7 +1300,7 @@ const firebaseConfig = {
         }
       }
 
-      // Aktifkan button terpilih
+      // Hack to activate sidebar style in JS
       const activeBtn = document.querySelector(`.sidebar-tab-btn[data-tab="${tabId}"]`);
       if (activeBtn) {
         activeBtn.classList.add('text-emerald-600', 'bg-emerald-50');
@@ -1372,75 +1474,62 @@ const firebaseConfig = {
 
 
     // ================= PROSES AUTHENTICATION LOGIN =================
-    // Tab switching di login form
-    document.getElementById("btn-tab-kasir").addEventListener("click", () => {
-      document.getElementById("btn-tab-kasir").className = "flex-1 py-2.5 rounded-xl font-bold text-sm bg-white text-slate-800 shadow-sm transition duration-300";
-      document.getElementById("btn-tab-owner").className = "flex-1 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:text-slate-800 transition duration-300";
-      document.getElementById("form-login-kasir").classList.remove("hidden");
-      document.getElementById("form-login-owner").classList.add("hidden");
-    });
-
-    document.getElementById("btn-tab-owner").addEventListener("click", () => {
-      document.getElementById("btn-tab-owner").className = "flex-1 py-2.5 rounded-xl font-bold text-sm bg-white text-slate-800 shadow-sm transition duration-300";
-      document.getElementById("btn-tab-kasir").className = "flex-1 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:text-slate-800 transition duration-300";
-      document.getElementById("form-login-owner").classList.remove("hidden");
-      document.getElementById("form-login-kasir").classList.add("hidden");
-    });
-
-    // Handle Login Kasir (Sistem Validasi Dokumen)
-    document.getElementById("form-login-kasir").addEventListener("submit", function(e) {
+    // LOGIN UNIFIED LOGIC
+    document.getElementById("form-login-unified").addEventListener("submit", async function(e) {
       e.preventDefault();
-      const usernameInput = document.getElementById("kasir-username").value.trim().toLowerCase();
-      const passwordInput = document.getElementById("kasir-password").value;
+      const identity = document.getElementById("login-identity").value.trim();
+      const credential = document.getElementById("login-credential").value;
 
-      // Cari akun yang sesuai di data users
-      const account = appData.users.find(u => u.username.toLowerCase() === usernameInput && u.password === passwordInput);
-      
-      if (account) {
-        currentUser = {
-          uid: account.id,
-          name: account.name,
-          role: "kasir",
-          outletId: account.outletId
-        };
-        sessionStorage.setItem("bakoelan_session", JSON.stringify(currentUser));
-        applyUserRoleUI();
-        document.getElementById("login-screen").classList.add("hidden");
-        showToast(`Selamat bekerja, ${account.name}!`, "success");
-        switchTab('pos');
+      const isEmail = identity.includes("@");
+
+      if (isEmail) {
+        // AUTENTIKASI OWNER
+        const email = identity.toLowerCase();
+        if (IS_PREVIEW) {
+          // Bypass login di preview mode
+          if (email === "owner@bakoelandimsum.com" && credential === "owner123") {
+            currentUser = { uid: "guest-owner", name: "Owner Preview", role: "owner", outletId: "all" };
+            sessionStorage.setItem("bakoelan_session", JSON.stringify(currentUser));
+            applyUserRoleUI();
+            document.getElementById("login-screen").classList.add("hidden");
+            showToast("Berhasil masuk sebagai Owner (Simulasi)", "success");
+            switchTab('dashboard');
+          } else {
+            showToast("Preview Login Owner: Gunakan owner@bakoelandimsum.com & owner123", "warning");
+          }
+        } else {
+          // Autentikasi sungguhan di Firebase Auth
+          try {
+            document.getElementById("loader").classList.remove("opacity-0", "pointer-events-none");
+            await authRef.signInWithEmailAndPassword(email, credential);
+            // Auth listener onAuthStateChanged will handle the rest
+            showToast("Login Owner Berhasil", "success");
+          } catch (err) {
+            showToast(err.message, "error");
+          } finally {
+            document.getElementById("loader").classList.add("opacity-0", "pointer-events-none");
+          }
+        }
       } else {
-        showToast("Username atau PIN Salah!", "error");
-      }
-    });
-
-    // Handle Login Owner (Firebase Authentication)
-    document.getElementById("form-login-owner").addEventListener("submit", async function(e) {
-      e.preventDefault();
-      const email = document.getElementById("owner-email").value.trim();
-      const password = document.getElementById("owner-password").value;
-
-      if (IS_PREVIEW) {
-        // Bypass login di preview mode
-        if (email === "owner@bakoelandimsum.com" && password === "owner123") {
-          currentUser = { uid: "guest-owner", name: "Owner Preview", role: "owner", outletId: "all" };
+        // AUTENTIKASI KASIR
+        const usernameInput = identity.toLowerCase();
+        // Cari akun yang sesuai di data users
+        const account = appData.users.find(u => u.username.toLowerCase() === usernameInput && u.password === credential);
+        
+        if (account) {
+          currentUser = {
+            uid: account.id,
+            name: account.name,
+            role: "kasir",
+            outletId: account.outletId
+          };
           sessionStorage.setItem("bakoelan_session", JSON.stringify(currentUser));
           applyUserRoleUI();
           document.getElementById("login-screen").classList.add("hidden");
-          showToast("Berhasil masuk sebagai Owner (Simulasi)", "success");
-          switchTab('dashboard');
+          showToast(`Selamat bekerja, ${account.name}!`, "success");
+          switchTab('pos');
         } else {
-          showToast("Preview Login Owner: Gunakan owner@bakoelandimsum.com & owner123", "warning");
-        }
-      } else {
-        // Autentikasi sungguhan di Firebase Auth
-        try {
-          document.getElementById("loader").classList.remove("opacity-0", "pointer-events-none");
-          await authRef.signInWithEmailAndPassword(email, password);
-          showToast("Login Owner Berhasil", "success");
-        } catch (err) {
-          showToast(err.message, "error");
-        } finally {
-          document.getElementById("loader").classList.add("opacity-0", "pointer-events-none");
+          showToast("Username Kasir atau PIN Salah!", "error");
         }
       }
     });
@@ -1516,7 +1605,7 @@ const firebaseConfig = {
         });
       }
 
-      // Render Chart Grafik Transaksi Terakhir (7 hari terakhir)
+      // Render Chart Grafik Transakhir (7 hari terakhir)
       renderSalesChart(filteredTransactions);
     }
 
@@ -1776,6 +1865,7 @@ const firebaseConfig = {
         `;
         document.getElementById("cart-subtotal").innerText = "Rp 0";
         document.getElementById("cart-tax").innerText = "Rp 0";
+        document.getElementById("cart-tax-label").innerText = `Pajak (PB1 ${appData.settings.taxRate || 10}%)`;
         document.getElementById("cart-total").innerText = "Rp 0";
         document.getElementById("cash-change-label").innerText = "Rp 0";
         return;
@@ -1843,13 +1933,11 @@ const firebaseConfig = {
       }
     }
 
-    // Input cepat nominal uang
     function inputQuickCash(amount) {
       document.getElementById("cash-received-input").value = amount;
       calculateChange();
     }
 
-    // Kalkulator Kembalian
     function calculateChange() {
       const subtotal = cart.reduce((acc, curr) => acc + (curr.price * curr.qty), 0);
       const taxRate = typeof appData.settings.taxRate !== 'undefined' ? parseFloat(appData.settings.taxRate) : 10;
@@ -2002,6 +2090,14 @@ const firebaseConfig = {
       document.getElementById("print-receipt-modal").classList.remove("hidden");
     }
 
+    function printReceipt() {
+      document.body.classList.add("printing-receipt");
+      window.print();
+      setTimeout(() => {
+        document.body.classList.remove("printing-receipt");
+      }, 1000);
+    }
+
     function closeReceiptModal() {
       document.getElementById("print-receipt-modal").classList.add("hidden");
     }
@@ -2017,7 +2113,17 @@ const firebaseConfig = {
         return;
       }
 
-      appData.products.forEach(p => {
+      // Pagination calculation
+      const totalItems = appData.products.length;
+      const totalPages = Math.ceil(totalItems / productPagination.pageSize) || 1;
+      if (productPagination.currentPage > totalPages) {
+        productPagination.currentPage = totalPages;
+      }
+      const start = (productPagination.currentPage - 1) * productPagination.pageSize;
+      const end = start + productPagination.pageSize;
+      const paginatedProducts = appData.products.slice(start, end);
+
+      paginatedProducts.forEach(p => {
         // Identifikasi nama outlet berdasarkan properti outletId produk
         const outlet = appData.outlets.find(o => o.id === p.outletId);
         const outletName = p.outletId === 'all' || !p.outletId ? 'Semua Outlet' : (outlet ? outlet.name : 'Unknown');
@@ -2052,6 +2158,55 @@ const firebaseConfig = {
           </tr>
         `;
       });
+
+      renderProductPagination(totalItems);
+    }
+
+    function renderProductPagination(totalItems) {
+      const container = document.getElementById("product-pagination-container");
+      if (!container) return;
+
+      const totalPages = Math.ceil(totalItems / productPagination.pageSize) || 1;
+      const start = (productPagination.currentPage - 1) * productPagination.pageSize;
+      const displayStart = totalItems === 0 ? 0 : start + 1;
+      const displayEnd = Math.min(start + productPagination.pageSize, totalItems);
+
+      container.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span>Tampilkan</span>
+          <select onchange="changeProductPageSize(this.value)" class="px-2 py-1.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-emerald-500 text-xs font-bold text-slate-700 cursor-pointer shadow-sm">
+            <option value="10" ${productPagination.pageSize === 10 ? 'selected' : ''}>10</option>
+            <option value="50" ${productPagination.pageSize === 50 ? 'selected' : ''}>50</option>
+            <option value="100" ${productPagination.pageSize === 100 ? 'selected' : ''}>100</option>
+          </select>
+          <span>baris</span>
+        </div>
+        <div class="text-slate-400 font-semibold text-center sm:text-left">
+          Menampilkan ${displayStart} - ${displayEnd} dari ${totalItems} data
+        </div>
+        <div class="flex items-center gap-1">
+          <button onclick="setProductPage(1)" ${productPagination.currentPage === 1 ? 'disabled' : ''} class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"><i class="fa-solid fa-angles-left text-[10px]"></i></button>
+          <button onclick="setProductPage(${productPagination.currentPage - 1})" ${productPagination.currentPage === 1 ? 'disabled' : ''} class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"><i class="fa-solid fa-angle-left text-[10px]"></i></button>
+          
+          <span class="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-extrabold border border-emerald-100">
+            ${productPagination.currentPage} / ${totalPages}
+          </span>
+          
+          <button onclick="setProductPage(${productPagination.currentPage + 1})" ${productPagination.currentPage === totalPages ? 'disabled' : ''} class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"><i class="fa-solid fa-angle-right text-[10px]"></i></button>
+          <button onclick="setProductPage(${totalPages})" ${productPagination.currentPage === totalPages ? 'disabled' : ''} class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"><i class="fa-solid fa-angles-right text-[10px]"></i></button>
+        </div>
+      `;
+    }
+
+    window.changeProductPageSize = function(size) {
+      productPagination.pageSize = parseInt(size);
+      productPagination.currentPage = 1;
+      loadProducts();
+    }
+
+    window.setProductPage = function(page) {
+      productPagination.currentPage = page;
+      loadProducts();
     }
 
     function openProductModal(mode, id = null) {
@@ -2300,7 +2455,17 @@ const firebaseConfig = {
         return;
       }
 
-      appData.employees.forEach(emp => {
+      // Pagination calculation
+      const totalItems = appData.employees.length;
+      const totalPages = Math.ceil(totalItems / employeePagination.pageSize) || 1;
+      if (employeePagination.currentPage > totalPages) {
+        employeePagination.currentPage = totalPages;
+      }
+      const start = (employeePagination.currentPage - 1) * employeePagination.pageSize;
+      const end = start + employeePagination.pageSize;
+      const paginatedEmployees = appData.employees.slice(start, end);
+
+      paginatedEmployees.forEach(emp => {
         const outlet = appData.outlets.find(o => o.id === emp.outletId);
         const outletName = outlet ? outlet.name : "Unassigned";
 
@@ -2320,6 +2485,55 @@ const firebaseConfig = {
           </tr>
         `;
       });
+
+      renderEmployeePagination(totalItems);
+    }
+
+    function renderEmployeePagination(totalItems) {
+      const container = document.getElementById("employee-pagination-container");
+      if (!container) return;
+
+      const totalPages = Math.ceil(totalItems / employeePagination.pageSize) || 1;
+      const start = (employeePagination.currentPage - 1) * employeePagination.pageSize;
+      const displayStart = totalItems === 0 ? 0 : start + 1;
+      const displayEnd = Math.min(start + employeePagination.pageSize, totalItems);
+
+      container.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span>Tampilkan</span>
+          <select onchange="changeEmployeePageSize(this.value)" class="px-2 py-1.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-emerald-500 text-xs font-bold text-slate-700 cursor-pointer shadow-sm">
+            <option value="10" ${employeePagination.pageSize === 10 ? 'selected' : ''}>10</option>
+            <option value="50" ${employeePagination.pageSize === 50 ? 'selected' : ''}>50</option>
+            <option value="100" ${employeePagination.pageSize === 100 ? 'selected' : ''}>100</option>
+          </select>
+          <span>baris</span>
+        </div>
+        <div class="text-slate-400 font-semibold text-center sm:text-left">
+          Menampilkan ${displayStart} - ${displayEnd} dari ${totalItems} data
+        </div>
+        <div class="flex items-center gap-1">
+          <button onclick="setEmployeePage(1)" ${employeePagination.currentPage === 1 ? 'disabled' : ''} class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"><i class="fa-solid fa-angles-left text-[10px]"></i></button>
+          <button onclick="setEmployeePage(${employeePagination.currentPage - 1})" ${employeePagination.currentPage === 1 ? 'disabled' : ''} class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"><i class="fa-solid fa-angle-left text-[10px]"></i></button>
+          
+          <span class="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-extrabold border border-emerald-100">
+            ${employeePagination.currentPage} / ${totalPages}
+          </span>
+          
+          <button onclick="setEmployeePage(${employeePagination.currentPage + 1})" ${employeePagination.currentPage === totalPages ? 'disabled' : ''} class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"><i class="fa-solid fa-angle-right text-[10px]"></i></button>
+          <button onclick="setEmployeePage(${totalPages})" ${employeePagination.currentPage === totalPages ? 'disabled' : ''} class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"><i class="fa-solid fa-angles-right text-[10px]"></i></button>
+        </div>
+      `;
+    }
+
+    window.changeEmployeePageSize = function(size) {
+      employeePagination.pageSize = parseInt(size);
+      employeePagination.currentPage = 1;
+      loadEmployees();
+    }
+
+    window.setEmployeePage = function(page) {
+      employeePagination.currentPage = page;
+      loadEmployees();
     }
 
     function openEmployeeModal(mode, id = null) {
@@ -2592,11 +2806,23 @@ const firebaseConfig = {
 
       if (filtered.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6" class="py-8 text-center text-slate-400 text-xs">Tidak ada data transaksi ditemukan pada filter ini.</td></tr>`;
+        const container = document.getElementById("report-pagination-container");
+        if (container) container.innerHTML = "";
         return;
       }
 
-      // Render Baris Transaksi
-      filtered.reverse().forEach(t => {
+      // Pagination calculation based on filtered transactions (terbalik untuk urutan terbaru)
+      const totalItems = filtered.length;
+      const totalPages = Math.ceil(totalItems / reportPagination.pageSize) || 1;
+      if (reportPagination.currentPage > totalPages) {
+        reportPagination.currentPage = totalPages;
+      }
+      const start = (reportPagination.currentPage - 1) * reportPagination.pageSize;
+      const end = start + reportPagination.pageSize;
+      const sortedTransactions = [...filtered].reverse();
+      const paginatedReports = sortedTransactions.slice(start, end);
+
+      paginatedReports.forEach(t => {
         const dateStr = new Date(t.date).toLocaleDateString('id-ID', {
           year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
         });
@@ -2622,14 +2848,171 @@ const firebaseConfig = {
           </tr>
         `;
       });
+
+      renderReportPagination(totalItems);
     }
 
-    function reprintTransaction(trxId) {
-      const trx = appData.transactions.find(t => t.id === trxId);
-      if (trx) {
-        renderThermalReceipt(trx);
-      }
+    function renderReportPagination(totalItems) {
+      const container = document.getElementById("report-pagination-container");
+      if (!container) return;
+
+      const totalPages = Math.ceil(totalItems / reportPagination.pageSize) || 1;
+      const start = (reportPagination.currentPage - 1) * reportPagination.pageSize;
+      const displayStart = totalItems === 0 ? 0 : start + 1;
+      const displayEnd = Math.min(start + reportPagination.pageSize, totalItems);
+
+      container.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span>Tampilkan</span>
+          <select onchange="changeReportPageSize(this.value)" class="px-2 py-1.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-emerald-500 text-xs font-bold text-slate-700 cursor-pointer shadow-sm">
+            <option value="10" ${reportPagination.pageSize === 10 ? 'selected' : ''}>10</option>
+            <option value="50" ${reportPagination.pageSize === 50 ? 'selected' : ''}>50</option>
+            <option value="100" ${reportPagination.pageSize === 100 ? 'selected' : ''}>100</option>
+          </select>
+          <span>baris</span>
+        </div>
+        <div class="text-slate-400 font-semibold text-center sm:text-left">
+          Menampilkan ${displayStart} - ${displayEnd} dari ${totalItems} data
+        </div>
+        <div class="flex items-center gap-1">
+          <button onclick="setReportPage(1)" ${reportPagination.currentPage === 1 ? 'disabled' : ''} class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"><i class="fa-solid fa-angles-left text-[10px]"></i></button>
+          <button onclick="setReportPage(${reportPagination.currentPage - 1})" ${reportPagination.currentPage === 1 ? 'disabled' : ''} class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"><i class="fa-solid fa-angle-left text-[10px]"></i></button>
+          
+          <span class="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-extrabold border border-emerald-100">
+            ${reportPagination.currentPage} / ${totalPages}
+          </span>
+          
+          <button onclick="setReportPage(${reportPagination.currentPage + 1})" ${reportPagination.currentPage === totalPages ? 'disabled' : ''} class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"><i class="fa-solid fa-angle-right text-[10px]"></i></button>
+          <button onclick="setReportPage(${totalPages})" ${reportPagination.currentPage === totalPages ? 'disabled' : ''} class="w-8 h-8 rounded-lg flex items-center justify-center border border-slate-200 bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"><i class="fa-solid fa-angles-right text-[10px]"></i></button>
+        </div>
+      `;
     }
+
+    window.changeReportPageSize = function(size) {
+      reportPagination.pageSize = parseInt(size);
+      reportPagination.currentPage = 1;
+      filterReports();
+    }
+
+    window.setReportPage = function(page) {
+      reportPagination.currentPage = page;
+      filterReports();
+    }
+
+    // Fungsi Cetak Data Laporan Filtered (Format PDF)
+    window.printFilteredReports = function() {
+      const startDate = document.getElementById("report-start-date").value;
+      const endDate = document.getElementById("report-end-date").value;
+      
+      const filtered = appData.transactions.filter(t => {
+        const trxDate = t.date.split('T')[0];
+        const matchesDate = trxDate >= startDate && trxDate <= endDate;
+        const matchesOutlet = globalActiveOutlet === 'all' || t.outletId === globalActiveOutlet;
+        return matchesDate && matchesOutlet;
+      });
+
+      if (filtered.length === 0) {
+        showToast("Tidak ada data laporan untuk dicetak!", "warning");
+        return;
+      }
+
+      // Memasang metadata kop laporan PDF dinamis
+      const outletObj = appData.outlets.find(o => o.id === globalActiveOutlet);
+      document.getElementById("print-report-outlet-name").innerText = `Outlet: ${outletObj ? outletObj.name : 'Semua Outlet / Pusat'}`;
+      document.getElementById("print-report-date-range").innerText = `Periode Penjualan: ${startDate} s/d ${endDate}`;
+      document.getElementById("print-report-by").innerText = currentUser.name + ` (${currentUser.role})`;
+      document.getElementById("print-report-generation-time").innerText = new Date().toLocaleString('id-ID');
+
+      // Populate data baris ke dalam container cetak laporan
+      const printTbody = document.getElementById("print-report-table-body");
+      printTbody.innerHTML = "";
+      
+      let totalTrx = filtered.length;
+      let totalTax = 0;
+      let totalSales = 0;
+
+      filtered.forEach(t => {
+        totalTax += t.tax || 0;
+        totalSales += t.total || 0;
+        
+        const dateStr = new Date(t.date).toLocaleDateString('id-ID', {
+          year: 'numeric', month: '2-digit', day: '2-digit'
+        });
+        const itemsStr = t.items.map(item => `${item.name} (${item.qty}x)`).join(', ');
+
+        printTbody.innerHTML += `
+          <tr class="border-b border-slate-200">
+            <td class="p-3 font-bold text-slate-800">${t.id}</td>
+            <td class="p-3">
+              <span class="block font-semibold">${dateStr}</span>
+              <span class="text-[9px] text-slate-400 font-bold uppercase">Kasir: ${t.cashierName}</span>
+            </td>
+            <td class="p-3 text-slate-600 max-w-xs truncate">${itemsStr}</td>
+            <td class="p-3"><span class="bg-slate-100 px-2.5 py-0.5 rounded font-bold">${t.paymentMethod}</span></td>
+            <td class="p-3 text-right font-extrabold text-slate-800">${formatRupiah(t.total)}</td>
+          </tr>
+        `;
+      });
+
+      // Mengisi kotak total ringkasan
+      document.getElementById("print-report-total-trx").innerText = totalTrx;
+      document.getElementById("print-report-total-tax").innerText = formatRupiah(totalTax);
+      document.getElementById("print-report-total-sales").innerText = formatRupiah(totalSales);
+
+      // Trigger printer layout laporan
+      document.body.classList.add("printing-report");
+      window.print();
+      
+      // Bersihkan class modifier setelah dialog print tertutup
+      setTimeout(() => {
+        document.body.classList.remove("printing-report");
+      }, 1000);
+    };
+
+    // Fungsi Ekspor Laporan Filtered ke Berkas Excel (.xls)
+    window.exportReportsToXLS = function() {
+      const startDate = document.getElementById("report-start-date").value;
+      const endDate = document.getElementById("report-end-date").value;
+      
+      const filtered = appData.transactions.filter(t => {
+        const trxDate = t.date.split('T')[0];
+        const matchesDate = trxDate >= startDate && trxDate <= endDate;
+        const matchesOutlet = globalActiveOutlet === 'all' || t.outletId === globalActiveOutlet;
+        return matchesDate && matchesOutlet;
+      });
+
+      if (filtered.length === 0) {
+        showToast("Tidak ada data laporan untuk diekspor!", "warning");
+        return;
+      }
+
+      // Pembuatan struktur TSV Excel yang aman dan kompatibel dibuka oleh Microsoft Excel
+      let xlsContent = "ID Transaksi\tTanggal & Waktu\tKasir\tOutlet Cabang\tItem Terjual\tMetode Pembayaran\tSubtotal\tPajak PB1\tTotal Akhir (Omset)\n";
+      
+      filtered.forEach(t => {
+        const dateStr = new Date(t.date).toLocaleString('id-ID');
+        const itemsStr = t.items.map(item => `${item.name} (${item.qty}x)`).join(', ');
+        const outletObj = appData.outlets.find(o => o.id === t.outletId);
+        const outletName = outletObj ? outletObj.name : 'Unknown';
+
+        xlsContent += `${t.id}\t${dateStr}\t${t.cashierName}\t${outletName}\t${itemsStr}\t${t.paymentMethod}\t${t.subtotal}\t${t.tax}\t${t.total}\n`;
+      });
+
+      // Proses pengunduhan berkas Excel client-side
+      try {
+        const blob = new Blob([xlsContent], { type: "application/vnd.ms-excel;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const downloadLink = document.createElement("a");
+        downloadLink.href = url;
+        downloadLink.setAttribute("download", `Laporan_Penjualan_${startDate}_s_d_${endDate}.xls`);
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        showToast("Laporan penjualan berhasil diekspor ke berkas XLS.");
+      } catch (err) {
+        showToast("Gagal mengekspor data: " + err.message, "error");
+      }
+    };
 
 
     // ================= TAB: PENGATURAN LOGIC =================
@@ -2777,10 +3160,10 @@ const firebaseConfig = {
             { id: "OTL-001", name: "Outlet Pusat Jakarta", contact: "08123456789", address: "Jl. Merdeka No. 12" }
           ];
           appData.employees = [
-            { id: "EMP-003", name: "Admin", role: "Owner", phone: "08112233445", outletId: "OTL-001" }
+            { id: "EMP-003", name: "Dimas Saputra", role: "Owner", phone: "08112233445", outletId: "OTL-001" }
           ];
           appData.users = [
-            { id: "ACC-003", employeeId: "EMP-003", name: "Admin", username: "owner", password: "123", outletId: "OTL-001", role: "owner" }
+            { id: "ACC-003", employeeId: "EMP-003", name: "Dimas Saputra", username: "owner", password: "123", outletId: "OTL-001", role: "owner" }
           ];
           appData.settings = {
             storeName: "Bakoelan Dimsum",
@@ -2833,6 +3216,61 @@ const firebaseConfig = {
           switchTab('dashboard');
         }
       );
+    };
+
+    // ================= MOBILE NAVIGATION & DRAWER SYSTEM =================
+
+    // Toggle menu slide-up
+    window.toggleMobileMoreMenu = function() {
+      const backdrop = document.getElementById("mobile-more-menu-backdrop");
+      const sheet = document.getElementById("mobile-more-menu-sheet");
+      const btnMore = document.getElementById("btn-mobile-more");
+
+      if (sheet.classList.contains("translate-y-full")) {
+        // Buka menu
+        backdrop.classList.remove("hidden");
+        sheet.classList.remove("translate-y-full");
+        setTimeout(() => {
+          backdrop.classList.add("opacity-100");
+        }, 50);
+        
+        // Tandai tombol sebagai aktif
+        btnMore.classList.add("text-emerald-600");
+        btnMore.classList.remove("text-slate-400");
+        
+        // Sembunyikan tombol owner jika perannya adalah kasir
+        const isKasir = currentUser && currentUser.role === 'kasir';
+        document.querySelectorAll("#mobile-more-menu-sheet .owner-only").forEach(el => {
+          if (isKasir) {
+            el.classList.add("hidden");
+          } else {
+            el.classList.remove("hidden");
+          }
+        });
+      } else {
+        // Tutup menu
+        backdrop.classList.remove("opacity-100");
+        sheet.classList.add("translate-y-full");
+        
+        btnMore.classList.remove("text-emerald-600");
+        btnMore.classList.add("text-slate-400");
+        
+        setTimeout(() => {
+          backdrop.classList.add("hidden");
+        }, 300);
+      }
+    };
+
+    // Switch tab dari menu laci mobile lalu tutup otomatis laci
+    window.switchTabMobile = function(tabId) {
+      toggleMobileMoreMenu();
+      switchTab(tabId);
+    };
+
+    // Trigger logout dari laci mobile
+    window.triggerLogoutMobile = function() {
+      toggleMobileMoreMenu();
+      triggerLogout();
     };
 
   </script>
