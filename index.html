@@ -1518,7 +1518,7 @@ const firebaseConfig = {
       // 2. Jika bukan akun kasir yang cocok, coba autentikasi sebagai OWNER
       if (IS_PREVIEW) {
         // Bypass login di preview mode
-        if (identity === "owner@bakoelandimsum.com" && credential === "owner123") {
+        if (identity === "admin@bakoelandimsum.com" && credential === "owner123") {
           currentUser = { uid: "guest-owner", name: "Owner Preview", role: "owner", outletId: "all" };
           sessionStorage.setItem("bakoelan_session", JSON.stringify(currentUser));
           applyUserRoleUI();
@@ -3264,10 +3264,10 @@ const firebaseConfig = {
             { id: "OTL-001", name: "Gerai 1", contact: "08123456789", address: "Jl. Sudirman-Dumai" }
           ];
           appData.employees = [
-            { id: "EMP-003", name: "Dimas Saputra", role: "Owner", phone: "08112233445", outletId: "OTL-001" }
+            { id: "EMP-003", name: "Super Admin", role: "Owner", phone: "08112233445", outletId: "OTL-001" }
           ];
           appData.users = [
-            { id: "ACC-003", employeeId: "EMP-003", name: "Dimas Saputra", email: "owner@bakoelandimsum.com", password: "123", outletId: "OTL-001", role: "owner" }
+            { id: "ACC-003", employeeId: "EMP-003", name: "Super Admin", email: "admin@bakoelandimsum.com", password: "123", outletId: "OTL-001", role: "owner" }
           ];
           appData.settings = {
             storeName: "Bakoelan Dimsum",
