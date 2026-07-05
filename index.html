@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bakoelan Dimsum - POS & Dashboard</title>
+  <title>Bakoelan Dimsum</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -195,7 +195,7 @@
           <i class="fa-solid fa-utensils text-2xl text-white"></i>
         </div>
         <h2 class="text-2xl font-extrabold text-slate-800 mt-4">Bakoelan Dimsum</h2>
-        <p class="text-slate-500 text-sm mt-1">Sistem Manajemen POS & Outlet Terpadu</p>
+        <p class="text-slate-500 text-sm mt-1">Sistem Manajemen KASIR & Outlet Terpadu</p>
       </div>
 
       <!-- Mode Preview Indicator -->
@@ -231,7 +231,7 @@
       </form>
 
       <div class="mt-6 text-center text-xs text-slate-400 font-medium">
-        v2.5 &copy; 2026 Bakoelan Dimsum Group
+        v2.5 &copy; 2026 Firdaus AL.K
       </div>
     </div>
   </div>
@@ -931,6 +931,13 @@
           <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">PIN / Sandi Login (Min 4 Karakter)</label>
           <input type="password" id="usr-password" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" required>
         </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Peran / Role Akun</label>
+          <select id="usr-role" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold bg-white" required>
+            <option value="kasir">Kasir (Outlet)</option>
+            <option value="owner">Owner (Akses Penuh)</option>
+          </select>
+        </div>
         <div class="flex justify-end gap-3 pt-2">
           <button type="button" onclick="closeUserModal()" class="px-4 py-2 text-slate-500 hover:text-slate-700 text-xs font-bold">Batal</button>
           <button type="submit" class="px-5 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl">Simpan Akun</button>
@@ -1481,28 +1488,29 @@ const firebaseConfig = {
       const identity = document.getElementById("login-identity").value.trim().toLowerCase();
       const credential = document.getElementById("login-credential").value;
 
-      // 1. Cek dulu apakah email ini terdaftar sebagai akun KASIR (validasi lokal)
-      const kasirAccount = appData.users.find(u => u.email && u.email.toLowerCase() === identity && u.password === credential);
+      // 1. Cek dulu apakah email ini terdaftar sebagai akun lokal (Kasir ATAU Owner yang diinput manual)
+      const localAccount = appData.users.find(u => u.email && u.email.toLowerCase() === identity && u.password === credential);
 
-      if (kasirAccount) {
-        // AUTENTIKASI KASIR (validasi lokal)
+      if (localAccount) {
+        // AUTENTIKASI LOKAL (role mengikuti data yang tersimpan di akun, bukan dipaksa "kasir")
+        const accountRole = localAccount.role === 'owner' ? 'owner' : 'kasir';
         currentUser = {
-          uid: kasirAccount.id,
-          name: kasirAccount.name,
-          role: "kasir",
-          outletId: kasirAccount.outletId
+          uid: localAccount.id,
+          name: localAccount.name,
+          role: accountRole,
+          outletId: localAccount.outletId
         };
         sessionStorage.setItem("bakoelan_session", JSON.stringify(currentUser));
 
         // Buat sesi anonim ke Firebase Auth, supaya Firestore Security Rules
-        // (yang biasanya mensyaratkan request.auth != null) tetap mengizinkan kasir baca/tulis data.
+        // (yang biasanya mensyaratkan request.auth != null) tetap mengizinkan kasir/owner lokal baca/tulis data.
         if (!IS_PREVIEW && authRef && !authRef.currentUser) {
           try {
             document.getElementById("loader").classList.remove("opacity-0", "pointer-events-none");
             await authRef.signInAnonymously();
           } catch (err) {
-            console.error("Gagal membuat sesi anonim Firebase untuk kasir:", err);
-            showToast("Sesi cloud kasir gagal terhubung, transaksi akan dicadangkan offline sementara.", "warning");
+            console.error("Gagal membuat sesi anonim Firebase untuk akun lokal:", err);
+            showToast("Sesi cloud gagal terhubung, transaksi akan dicadangkan offline sementara.", "warning");
           } finally {
             document.getElementById("loader").classList.add("opacity-0", "pointer-events-none");
           }
@@ -1510,8 +1518,8 @@ const firebaseConfig = {
 
         applyUserRoleUI();
         document.getElementById("login-screen").classList.add("hidden");
-        showToast(`Selamat bekerja, ${kasirAccount.name}!`, "success");
-        switchTab('pos');
+        showToast(`Selamat bekerja, ${localAccount.name}!`, "success");
+        switchTab(accountRole === 'owner' ? 'dashboard' : 'pos');
         return;
       }
 
@@ -2821,6 +2829,7 @@ const firebaseConfig = {
       if (mode === 'add') {
         document.getElementById("user-modal-title").innerText = "Daftarkan Akun Staf";
         document.getElementById("user-account-id").value = "";
+        document.getElementById("usr-role").value = "kasir";
       } else {
         document.getElementById("user-modal-title").innerText = "Edit Akun Login";
         const usr = appData.users.find(u => u.id === id);
@@ -2829,6 +2838,7 @@ const firebaseConfig = {
           document.getElementById("usr-employee-id").value = usr.employeeId;
           document.getElementById("usr-email").value = usr.email;
           document.getElementById("usr-password").value = usr.password;
+          document.getElementById("usr-role").value = usr.role || "kasir";
         }
       }
       document.getElementById("user-modal").classList.remove("hidden");
@@ -2855,7 +2865,7 @@ const firebaseConfig = {
         email: document.getElementById("usr-email").value.trim().toLowerCase(),
         password: document.getElementById("usr-password").value,
         outletId: employee.outletId,
-        role: "kasir"
+        role: document.getElementById("usr-role").value || "kasir"
       };
 
       if (!IS_PREVIEW && dbRef) {
