@@ -1218,8 +1218,8 @@ const firebaseConfig = {
           
           // Memantau Auth State
           authRef.onAuthStateChanged(async (user) => {
-            if (user) {
-              // Jika ini login owner via Auth
+            if (user && !user.isAnonymous) {
+              // Ini sesi Owner asli (login via email/password Firebase Auth)
               currentUser = {
                 uid: user.uid,
                 name: "Owner",
@@ -1230,7 +1230,7 @@ const firebaseConfig = {
               await loadFirebaseData();
               document.getElementById("login-screen").classList.add("hidden");
             } else {
-              // Cek jika kasir sedang tersimpan di Session
+              // user null ATAU sesi anonim milik kasir -> Cek session kasir tersimpan
               const savedUser = sessionStorage.getItem("bakoelan_session");
               if (savedUser) {
                 currentUser = JSON.parse(savedUser);
@@ -1555,7 +1555,7 @@ const firebaseConfig = {
       const kasirAccount = appData.users.find(u => u.email && u.email.toLowerCase() === identity && u.password === credential);
 
       if (kasirAccount) {
-        // AUTENTIKASI KASIR
+        // AUTENTIKASI KASIR (validasi lokal)
         currentUser = {
           uid: kasirAccount.id,
           name: kasirAccount.name,
@@ -1563,6 +1563,21 @@ const firebaseConfig = {
           outletId: kasirAccount.outletId
         };
         sessionStorage.setItem("bakoelan_session", JSON.stringify(currentUser));
+
+        // Buat sesi anonim ke Firebase Auth, supaya Firestore Security Rules
+        // (yang biasanya mensyaratkan request.auth != null) tetap mengizinkan kasir baca/tulis data.
+        if (!IS_PREVIEW && authRef && !authRef.currentUser) {
+          try {
+            document.getElementById("loader").classList.remove("opacity-0", "pointer-events-none");
+            await authRef.signInAnonymously();
+          } catch (err) {
+            console.error("Gagal membuat sesi anonim Firebase untuk kasir:", err);
+            showToast("Sesi cloud kasir gagal terhubung, transaksi akan dicadangkan offline sementara.", "warning");
+          } finally {
+            document.getElementById("loader").classList.add("opacity-0", "pointer-events-none");
+          }
+        }
+
         applyUserRoleUI();
         document.getElementById("login-screen").classList.add("hidden");
         showToast(`Selamat bekerja, ${kasirAccount.name}!`, "success");
@@ -2071,7 +2086,8 @@ const firebaseConfig = {
           await pRef.collection('transactions').doc(trxId).set(payload);
           await loadFirebaseData(); // Muat ulang data terbaru
         } catch (err) {
-          showToast("Koneksi gagal saat simpan, data dicadangkan offline.", "warning");
+          console.error("Gagal menyimpan transaksi ke Firestore:", err);
+          showToast("Koneksi gagal saat simpan (" + (err.code || err.message) + "), data dicadangkan offline.", "warning");
           saveLocalTrx(payload);
         } finally {
           document.getElementById("loader").classList.add("opacity-0", "pointer-events-none");
