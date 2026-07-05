@@ -825,7 +825,14 @@
         </div>
         <div>
           <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Link URL Foto Produk (Opsional)</label>
-          <input type="url" id="prod-image-url" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" placeholder="https://images.unsplash.com/... (Kosongkan untuk tampilan default)">
+          <input type="url" id="prod-image-url" oninput="previewProductImage()" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" placeholder="https://images.unsplash.com/... (Kosongkan untuk tampilan default)">
+          <div id="prod-image-preview-wrap" class="mt-2 hidden">
+            <div class="w-20 h-20 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center">
+              <img id="prod-image-preview" class="w-full h-full object-cover hidden" onload="document.getElementById('prod-image-preview').classList.remove('hidden'); document.getElementById('prod-image-preview-status').innerText='✅ Gambar berhasil dimuat'; document.getElementById('prod-image-preview-status').className='text-[10px] text-emerald-600 font-bold mt-1';" onerror="document.getElementById('prod-image-preview').classList.add('hidden'); document.getElementById('prod-image-preview-status').innerText='❌ Link ini bukan link gambar langsung (coba pakai opsi \'Direct Link\' dari situs hosting-nya)'; document.getElementById('prod-image-preview-status').className='text-[10px] text-red-500 font-bold mt-1';">
+              <i class="fa-solid fa-spinner fa-spin text-slate-300"></i>
+            </div>
+            <p id="prod-image-preview-status" class="text-[10px] text-slate-400 font-bold mt-1">Memeriksa link...</p>
+          </div>
         </div>
         <div>
           <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Penugasan Outlet Cabang</label>
@@ -2313,6 +2320,26 @@ const firebaseConfig = {
         }
       }
       document.getElementById("product-modal").classList.remove("hidden");
+      previewProductImage();
+    }
+
+    function previewProductImage() {
+      const url = document.getElementById("prod-image-url").value.trim();
+      const wrap = document.getElementById("prod-image-preview-wrap");
+      const img = document.getElementById("prod-image-preview");
+      const status = document.getElementById("prod-image-preview-status");
+
+      if (!url) {
+        wrap.classList.add("hidden");
+        return;
+      }
+
+      wrap.classList.remove("hidden");
+      img.classList.add("hidden");
+      status.innerText = "Memeriksa link...";
+      status.className = "text-[10px] text-slate-400 font-bold mt-1";
+      // Trigger ulang load gambar (ganti src memaksa browser mengecek ulang)
+      img.src = url;
     }
 
     function closeProductModal() {
