@@ -136,7 +136,7 @@
     document.head.appendChild(link);
   </script>
 </head>
-<body class="text-slate-800 antialiased min-h-screen flex flex-col md:flex-row">
+<body class="text-slate-800 antialiased min-h-screen flex flex-col md:flex-row md:h-screen md:overflow-hidden">
 
   <!-- ================= LOADING SCREEN ================= -->
   <div id="loader" class="fixed inset-0 bg-white z-[9999] flex flex-col items-center justify-center transition-all duration-500">
@@ -182,10 +182,10 @@
       <!-- Tab Login -->
       <div class="flex bg-slate-100 p-1.5 rounded-2xl mb-6">
         <button id="btn-tab-kasir" class="flex-1 py-2.5 rounded-xl font-bold text-sm bg-white text-slate-800 shadow-sm transition duration-300">
-          <i class="fa-solid fa-cash-register mr-2"></i>Kasir / Staf
+          <i class="fa-solid fa-cash-register mr-2"></i>Kasir
         </button>
-        <button id="btn-tab-admin" class="flex-1 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:text-slate-800 transition duration-300">
-          <i class="fa-solid fa-user-shield mr-2"></i>Administrator
+        <button id="btn-tab-owner" class="flex-1 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:text-slate-800 transition duration-300">
+          <i class="fa-solid fa-user-shield mr-2"></i>Owner
         </button>
       </div>
 
@@ -221,15 +221,15 @@
         </button>
       </form>
 
-      <!-- Form Login Admin (Firebase Authentication) -->
-      <form id="form-login-admin" class="space-y-4 hidden">
+      <!-- Form Login Owner (Firebase Authentication) -->
+      <form id="form-login-owner" class="space-y-4 hidden">
         <div>
-          <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Email Administrator</label>
+          <label class="block text-xs font-bold uppercase text-slate-500 mb-1.5">Email Owner</label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
               <i class="fa-solid fa-envelope text-sm"></i>
             </span>
-            <input type="email" id="admin-email" class="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-emerald-500 transition text-sm font-semibold" placeholder="admin@bakoelandimsum.com">
+            <input type="email" id="owner-email" class="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-emerald-500 transition text-sm font-semibold" placeholder="owner@bakoelandimsum.com">
           </div>
         </div>
         <div>
@@ -238,11 +238,11 @@
             <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
               <i class="fa-solid fa-lock text-sm"></i>
             </span>
-            <input type="password" id="admin-password" class="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-emerald-500 transition text-sm font-semibold" placeholder="••••••••">
+            <input type="password" id="owner-password" class="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:border-emerald-500 transition text-sm font-semibold" placeholder="••••••••">
           </div>
         </div>
         <button type="submit" class="w-full bg-slate-900 text-white font-bold py-3.5 rounded-2xl hover:bg-slate-800 transition shadow-lg shadow-slate-900/20 active:scale-95 duration-100 mt-2">
-          Masuk Sebagai Admin
+          Masuk Sebagai Owner
         </button>
       </form>
 
@@ -254,7 +254,7 @@
 
 
   <!-- ================= LAYOUT UTAMA (DESKTOP SIDEBAR) ================= -->
-  <aside id="main-sidebar" class="no-print glass-sidebar w-80 min-h-screen hidden md:flex flex-col p-6 shrink-0 border-r border-slate-100 z-30 transition-transform">
+  <aside id="main-sidebar" class="no-print glass-sidebar w-80 md:h-screen hidden md:flex flex-col p-6 shrink-0 border-r border-slate-100 z-30 transition-transform overflow-hidden">
     <!-- Header Logo -->
     <div class="flex items-center gap-3.5 mb-8">
       <div class="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
@@ -275,8 +275,8 @@
         <i class="fa-solid fa-user-tie text-emerald-600"></i>
       </div>
       <div class="overflow-hidden">
-        <h4 id="user-display-name" class="font-bold text-sm text-slate-800 truncate">Administrator</h4>
-        <span id="user-display-role" class="inline-block px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase rounded-md mt-0.5">Admin</span>
+        <h4 id="user-display-name" class="font-bold text-sm text-slate-800 truncate">Owner</h4>
+        <span id="user-display-role" class="inline-block px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase rounded-md mt-0.5">Owner</span>
       </div>
     </div>
 
@@ -292,19 +292,19 @@
         <i class="fa-solid fa-cash-register text-lg w-6"></i>POS Kasir
       </button>
 
-      <button onclick="switchTab('produk')" data-tab="produk" class="sidebar-tab-btn flex items-center gap-3.5 w-full px-4 py-3 rounded-2xl font-semibold text-sm transition text-slate-500 hover:text-slate-800 hover:bg-slate-100 admin-only">
+      <button onclick="switchTab('produk')" data-tab="produk" class="sidebar-tab-btn flex items-center gap-3.5 w-full px-4 py-3 rounded-2xl font-semibold text-sm transition text-slate-500 hover:text-slate-800 hover:bg-slate-100 owner-only">
         <i class="fa-solid fa-bowl-food text-lg w-6"></i>Produk / Menu
       </button>
 
-      <button onclick="switchTab('outlet')" data-tab="outlet" class="sidebar-tab-btn flex items-center gap-3.5 w-full px-4 py-3 rounded-2xl font-semibold text-sm transition text-slate-500 hover:text-slate-800 hover:bg-slate-100 admin-only">
+      <button onclick="switchTab('outlet')" data-tab="outlet" class="sidebar-tab-btn flex items-center gap-3.5 w-full px-4 py-3 rounded-2xl font-semibold text-sm transition text-slate-500 hover:text-slate-800 hover:bg-slate-100 owner-only">
         <i class="fa-solid fa-store text-lg w-6"></i>Outlet Toko
       </button>
 
-      <button onclick="switchTab('karyawan')" data-tab="karyawan" class="sidebar-tab-btn flex items-center gap-3.5 w-full px-4 py-3 rounded-2xl font-semibold text-sm transition text-slate-500 hover:text-slate-800 hover:bg-slate-100 admin-only">
+      <button onclick="switchTab('karyawan')" data-tab="karyawan" class="sidebar-tab-btn flex items-center gap-3.5 w-full px-4 py-3 rounded-2xl font-semibold text-sm transition text-slate-500 hover:text-slate-800 hover:bg-slate-100 owner-only">
         <i class="fa-solid fa-users text-lg w-6"></i>Karyawan
       </button>
 
-      <button onclick="switchTab('manajemen-user')" data-tab="manajemen-user" class="sidebar-tab-btn flex items-center gap-3.5 w-full px-4 py-3 rounded-2xl font-semibold text-sm transition text-slate-500 hover:text-slate-800 hover:bg-slate-100 admin-only">
+      <button onclick="switchTab('manajemen-user')" data-tab="manajemen-user" class="sidebar-tab-btn flex items-center gap-3.5 w-full px-4 py-3 rounded-2xl font-semibold text-sm transition text-slate-500 hover:text-slate-800 hover:bg-slate-100 owner-only">
         <i class="fa-solid fa-users-gear text-lg w-6"></i>Manajemen User
       </button>
 
@@ -312,7 +312,7 @@
         <i class="fa-solid fa-file-invoice-dollar text-lg w-6"></i>Laporan
       </button>
 
-      <button onclick="switchTab('pengaturan')" data-tab="pengaturan" class="sidebar-tab-btn flex items-center gap-3.5 w-full px-4 py-3 rounded-2xl font-semibold text-sm transition text-slate-500 hover:text-slate-800 hover:bg-slate-100 admin-only">
+      <button onclick="switchTab('pengaturan')" data-tab="pengaturan" class="sidebar-tab-btn flex items-center gap-3.5 w-full px-4 py-3 rounded-2xl font-semibold text-sm transition text-slate-500 hover:text-slate-800 hover:bg-slate-100 owner-only">
         <i class="fa-solid fa-sliders text-lg w-6"></i>Pengaturan
       </button>
     </nav>
@@ -335,7 +335,7 @@
       <i class="fa-solid fa-cash-register text-lg"></i>
       <span class="text-[9px] font-bold">POS Kasir</span>
     </button>
-    <button onclick="switchTab('produk')" data-mobile-tab="produk" class="flex flex-col items-center gap-1 text-slate-400 admin-only">
+    <button onclick="switchTab('produk')" data-mobile-tab="produk" class="flex flex-col items-center gap-1 text-slate-400 owner-only">
       <i class="fa-solid fa-bowl-food text-lg"></i>
       <span class="text-[9px] font-bold">Menu</span>
     </button>
@@ -350,7 +350,7 @@
   </nav>
 
   <!-- ================= LAYOUT UTAMA (KONTEN UTAMA) ================= -->
-  <main class="flex-1 min-h-screen pb-24 md:pb-6 p-4 md:p-8 overflow-y-auto">
+  <main class="flex-1 md:h-screen pb-24 md:pb-6 p-4 md:p-8 overflow-y-auto">
     
     <!-- Top Bar (Desktop Only) -->
     <header class="no-print flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -416,7 +416,7 @@
         <div class="glass-card p-4 md:p-6 rounded-3xl flex items-center justify-between shadow-sm relative overflow-hidden group">
           <div class="space-y-1">
             <span class="text-[10px] md:text-xs font-bold uppercase text-slate-400">TOTAL OUTLET</span>
-            <h3 id="stat-outlets" class="text-lg md:text-2xl font-extrabold text-slate-800">0</h3>
+            <h3 id="stat-sales" class="text-lg md:text-2xl font-extrabold text-slate-800">0</h3>
           </div>
           <div class="w-10 h-10 md:w-14 md:h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110">
             <i class="fa-solid fa-store text-base md:text-xl"></i>
@@ -507,7 +507,7 @@
               <span id="cart-subtotal" class="text-slate-800">Rp 0</span>
             </div>
             <div class="flex justify-between items-center">
-              <span>Pajak (PB1 10%)</span>
+              <span id="cart-tax-label">Pajak (PB1 10%)</span>
               <span id="cart-tax" class="text-slate-800">Rp 0</span>
             </div>
             <div class="flex justify-between items-center text-base font-extrabold text-slate-800 border-t border-dashed border-slate-200 pt-3">
@@ -706,18 +706,48 @@
               <input type="text" id="setting-store-phone" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold">
             </div>
           </div>
-          <div>
-            <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Alamat Lengkap Toko</label>
-            <textarea id="setting-store-address" rows="3" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold"></textarea>
-          </div>
-          <div>
-            <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Catatan Kaki Struk (Receipt Footer)</label>
-            <input type="text" id="setting-store-footer" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Alamat Lengkap Toko</label>
+              <textarea id="setting-store-address" rows="3" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold"></textarea>
+            </div>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Catatan Kaki Struk (Receipt Footer)</label>
+                <input type="text" id="setting-store-footer" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold">
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Tarif Pajak PB1 (%)</label>
+                <input type="number" id="setting-store-tax" min="0" max="100" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" required placeholder="10">
+              </div>
+            </div>
           </div>
           <button type="submit" class="px-5 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl hover:bg-emerald-700 transition flex items-center gap-2 shadow-sm">
             <i class="fa-solid fa-save"></i> Simpan Pengaturan
           </button>
         </form>
+      </div>
+
+      <!-- Backup, Restore, and Wipe Database Section (Owner Only) -->
+      <div class="glass-card rounded-3xl p-6 shadow-sm max-w-2xl mt-6 owner-only">
+        <h4 class="text-lg font-bold text-red-600 mb-4 pb-2 border-b border-red-100 flex items-center gap-2">
+          <i class="fa-solid fa-database"></i> Pemeliharaan & Cadangan Data (Owner Only)
+        </h4>
+        <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+          Gunakan fitur ini untuk mencadangkan seluruh data toko Anda ke file lokal, memulihkan data dari file cadangan, atau mengosongkan database Anda ke kondisi bersih awal.
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <button onclick="backupDatabase()" type="button" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-sm">
+            <i class="fa-solid fa-download"></i> Ekspor Data (Backup)
+          </button>
+          <label class="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-sm cursor-pointer">
+            <i class="fa-solid fa-upload"></i> Impor Data (Restore)
+            <input type="file" id="restore-file-input" onchange="restoreDatabase(event)" class="hidden" accept=".json">
+          </label>
+          <button onclick="wipeDatabase()" type="button" class="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl flex items-center gap-2 shadow-sm ml-auto">
+            <i class="fa-solid fa-trash-can"></i> Hapus Seluruh Data (Wipe)
+          </button>
+        </div>
       </div>
     </section>
   </main>
@@ -816,10 +846,8 @@
           <div>
             <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Posisi / Jabatan</label>
             <select id="emp-role" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold bg-white" required>
-              <option value="Kasir Utama">Kasir Utama</option>
-              <option value="Staf Gudang">Staf Gudang</option>
-              <option value="Server/Pelayan">Server/Pelayan</option>
-              <option value="Manager Outlet">Manager Outlet</option>
+              <option value="Kasir">Kasir</option>
+              <option value="Owner">Owner</option>
             </select>
           </div>
           <div>
@@ -918,7 +946,7 @@
             <span id="receipt-subtotal">Rp 0</span>
           </div>
           <div class="flex justify-between">
-            <span>PB1 (10%)</span>
+            <span id="receipt-tax-label">PB1 (10%)</span>
             <span id="receipt-tax">Rp 0</span>
           </div>
           <div class="flex justify-between font-bold text-[12px]">
@@ -975,11 +1003,11 @@ const firebaseConfig = {
   appId: "1:719102591246:web:21f025828feb86b32dd75f",
   measurementId: "G-LCDMBFRYCH"
 };
-	
+
     // Global App State
     let dbRef = null;
     let authRef = null;
-    let currentUser = { uid: "guest-admin", name: "Administrator Preview", role: "admin", outletId: "all" };
+    let currentUser = { uid: "guest-owner", name: "Owner Preview", role: "owner", outletId: "all" };
     let globalActiveOutlet = "all";
     
     // In-Memory Data Store (Used both in PREVIEW Mode & as local cache for Firebase)
@@ -993,7 +1021,8 @@ const firebaseConfig = {
         storeName: "Bakoelan Dimsum",
         phone: "081234567890",
         address: "Jl. Merdeka Raya Utama No. 42, Cabang Jakarta",
-        footerText: "Terima Kasih atas Kunjungan Anda!"
+        footerText: "Terima Kasih atas Kunjungan Anda!",
+        taxRate: 10
       }
     };
 
@@ -1088,11 +1117,11 @@ const firebaseConfig = {
           // Memantau Auth State
           authRef.onAuthStateChanged(async (user) => {
             if (user) {
-              // Terautentikasi sebagai Admin di Firebase
+              // Terautentikasi sebagai Owner di Firebase
               currentUser = {
                 uid: user.uid,
-                name: "Administrator",
-                role: "admin",
+                name: "Owner",
+                role: "owner",
                 outletId: "all"
               };
               applyUserRoleUI();
@@ -1160,6 +1189,15 @@ const firebaseConfig = {
         btn.classList.add('text-slate-400');
       });
 
+      // Permisi Owner saja untuk tab yang terdaftar dengan kelas 'owner-only'
+      if (currentUser && currentUser.role === 'kasir') {
+        const targetBtn = document.querySelector(`.sidebar-tab-btn[data-tab="${tabId}"]`);
+        if (targetBtn && targetBtn.classList.contains('owner-only')) {
+          showToast("Akses Ditolak: Hanya untuk peran Owner.", "error");
+          return;
+        }
+      }
+
       // Aktifkan button terpilih
       const activeBtn = document.querySelector(`.sidebar-tab-btn[data-tab="${tabId}"]`);
       if (activeBtn) {
@@ -1212,14 +1250,35 @@ const firebaseConfig = {
       
       // Jika login sebagai kasir
       if (currentUser.role === 'kasir') {
-        // Sembunyikan menu admin
-        document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
+        // Sembunyikan menu owner
+        document.querySelectorAll('.owner-only').forEach(el => el.classList.add('hidden'));
         // Paksa switch ke POS sebagai default tab
         setTimeout(() => switchTab('pos'), 100);
       } else {
-        // Tampilkan semua menu jika admin
-        document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+        // Tampilkan semua menu jika owner
+        document.querySelectorAll('.owner-only').forEach(el => el.classList.remove('hidden'));
       }
+    }
+
+
+    // ================= DUMMY DATABASE GENERATOR (AUTOSETUP) =================
+    function autoSetupDatabase() {
+      // 1. Cabang Outlet Awal
+      appData.outlets = [];
+
+      // 2. Daftar Menu Dimsum & Minuman dengan Penugasan Outlet
+      appData.products = [];
+
+      // 3. Data Karyawan (Hanya memiliki jabatan Owner atau Kasir)
+      appData.employees = [];
+
+      // 4. Akun Staf / Kasir
+      appData.users = [];
+
+      // 5. Histori Transaksi Penjualan
+      appData.transactions = [];
+
+      saveToLocalCache();
     }
 
 
@@ -1316,15 +1375,15 @@ const firebaseConfig = {
     // Tab switching di login form
     document.getElementById("btn-tab-kasir").addEventListener("click", () => {
       document.getElementById("btn-tab-kasir").className = "flex-1 py-2.5 rounded-xl font-bold text-sm bg-white text-slate-800 shadow-sm transition duration-300";
-      document.getElementById("btn-tab-admin").className = "flex-1 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:text-slate-800 transition duration-300";
+      document.getElementById("btn-tab-owner").className = "flex-1 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:text-slate-800 transition duration-300";
       document.getElementById("form-login-kasir").classList.remove("hidden");
-      document.getElementById("form-login-admin").classList.add("hidden");
+      document.getElementById("form-login-owner").classList.add("hidden");
     });
 
-    document.getElementById("btn-tab-admin").addEventListener("click", () => {
-      document.getElementById("btn-tab-admin").className = "flex-1 py-2.5 rounded-xl font-bold text-sm bg-white text-slate-800 shadow-sm transition duration-300";
+    document.getElementById("btn-tab-owner").addEventListener("click", () => {
+      document.getElementById("btn-tab-owner").className = "flex-1 py-2.5 rounded-xl font-bold text-sm bg-white text-slate-800 shadow-sm transition duration-300";
       document.getElementById("btn-tab-kasir").className = "flex-1 py-2.5 rounded-xl font-bold text-sm text-slate-500 hover:text-slate-800 transition duration-300";
-      document.getElementById("form-login-admin").classList.remove("hidden");
+      document.getElementById("form-login-owner").classList.remove("hidden");
       document.getElementById("form-login-kasir").classList.add("hidden");
     });
 
@@ -1354,30 +1413,30 @@ const firebaseConfig = {
       }
     });
 
-    // Handle Login Admin (Firebase Authentication)
-    document.getElementById("form-login-admin").addEventListener("submit", async function(e) {
+    // Handle Login Owner (Firebase Authentication)
+    document.getElementById("form-login-owner").addEventListener("submit", async function(e) {
       e.preventDefault();
-      const email = document.getElementById("admin-email").value.trim();
-      const password = document.getElementById("admin-password").value;
+      const email = document.getElementById("owner-email").value.trim();
+      const password = document.getElementById("owner-password").value;
 
       if (IS_PREVIEW) {
         // Bypass login di preview mode
-        if (email === "admin@bakoelandimsum.com" && password === "admin123") {
-          currentUser = { uid: "guest-admin", name: "Administrator Preview", role: "admin", outletId: "all" };
+        if (email === "owner@bakoelandimsum.com" && password === "owner123") {
+          currentUser = { uid: "guest-owner", name: "Owner Preview", role: "owner", outletId: "all" };
           sessionStorage.setItem("bakoelan_session", JSON.stringify(currentUser));
           applyUserRoleUI();
           document.getElementById("login-screen").classList.add("hidden");
-          showToast("Berhasil masuk sebagai Admin (Simulasi)", "success");
+          showToast("Berhasil masuk sebagai Owner (Simulasi)", "success");
           switchTab('dashboard');
         } else {
-          showToast("Preview Login Admin: Gunakan admin@bakoelandimsum.com & admin123", "warning");
+          showToast("Preview Login Owner: Gunakan owner@bakoelandimsum.com & owner123", "warning");
         }
       } else {
         // Autentikasi sungguhan di Firebase Auth
         try {
           document.getElementById("loader").classList.remove("opacity-0", "pointer-events-none");
           await authRef.signInWithEmailAndPassword(email, password);
-          showToast("Login Admin Berhasil", "success");
+          showToast("Login Owner Berhasil", "success");
         } catch (err) {
           showToast(err.message, "error");
         } finally {
@@ -1420,7 +1479,7 @@ const firebaseConfig = {
       // Metrik 3: Produk
       document.getElementById("stat-products").innerText = appData.products.length;
 
-      // Metrik 4: Total Outlet
+      // Metrik 4: Outlet
       document.getElementById("stat-outlets").innerText = appData.outlets.length;
 
       // Render Riwayat Transaksi Terbaru
@@ -1692,11 +1751,13 @@ const firebaseConfig = {
       renderCart();
     }
 
+    // Menghapus item dari keranjang
     function removeFromCart(productId) {
       cart = cart.filter(i => i.id !== productId);
       renderCart();
     }
 
+    // Mengosongkan keranjang
     function clearCart() {
       cart = [];
       renderCart();
@@ -1741,11 +1802,13 @@ const firebaseConfig = {
         `;
       });
 
-      const tax = Math.round(subtotal * 0.1); // PB1 pajak daerah 10%
+      const taxRate = typeof appData.settings.taxRate !== 'undefined' ? parseFloat(appData.settings.taxRate) : 10;
+      const tax = Math.round(subtotal * (taxRate / 100));
       const total = subtotal + tax;
 
       document.getElementById("cart-subtotal").innerText = formatRupiah(subtotal);
       document.getElementById("cart-tax").innerText = formatRupiah(tax);
+      document.getElementById("cart-tax-label").innerText = `Pajak (PB1 ${taxRate}%)`;
       document.getElementById("cart-total").innerText = formatRupiah(total);
       
       calculateChange();
@@ -1780,7 +1843,7 @@ const firebaseConfig = {
       }
     }
 
-    // Input uang cepat
+    // Input cepat nominal uang
     function inputQuickCash(amount) {
       document.getElementById("cash-received-input").value = amount;
       calculateChange();
@@ -1789,7 +1852,8 @@ const firebaseConfig = {
     // Kalkulator Kembalian
     function calculateChange() {
       const subtotal = cart.reduce((acc, curr) => acc + (curr.price * curr.qty), 0);
-      const total = subtotal + Math.round(subtotal * 0.1);
+      const taxRate = typeof appData.settings.taxRate !== 'undefined' ? parseFloat(appData.settings.taxRate) : 10;
+      const total = subtotal + Math.round(subtotal * (taxRate / 100));
       const receivedInput = document.getElementById("cash-received-input").value;
       const received = parseFloat(receivedInput) || 0;
 
@@ -1805,7 +1869,8 @@ const firebaseConfig = {
       }
 
       const subtotal = cart.reduce((acc, curr) => acc + (curr.price * curr.qty), 0);
-      const tax = Math.round(subtotal * 0.1);
+      const taxRate = typeof appData.settings.taxRate !== 'undefined' ? parseFloat(appData.settings.taxRate) : 10;
+      const tax = Math.round(subtotal * (taxRate / 100));
       const total = subtotal + tax;
       const cashReceived = selectedPaymentMethod === 'Tunai' 
         ? (parseFloat(document.getElementById("cash-received-input").value) || 0)
@@ -1829,6 +1894,7 @@ const firebaseConfig = {
         items: [...cart],
         subtotal: subtotal,
         tax: tax,
+        taxRate: taxRate,
         total: total,
         paymentMethod: selectedPaymentMethod,
         cashReceived: cashReceived,
@@ -1908,8 +1974,20 @@ const firebaseConfig = {
         `;
       });
 
+      // MENGATASI TYPEERROR: Menambahkan pemeriksaan keberadaan elemen (null-check guard) secara ketat
+      const appliedTaxRate = typeof trx.taxRate !== 'undefined' ? trx.taxRate : 10;
+      const receiptTaxLabel = document.getElementById("receipt-tax-label");
+      if (receiptTaxLabel) {
+        receiptTaxLabel.innerText = `PB1 (${appliedTaxRate}%)`;
+      }
+
       document.getElementById("receipt-subtotal").innerText = formatRupiah(trx.subtotal);
-      document.getElementById("receipt-tax").innerText = formatRupiah(trx.tax);
+      
+      const receiptTax = document.getElementById("receipt-tax");
+      if (receiptTax) {
+        receiptTax.innerText = formatRupiah(trx.tax || 0);
+      }
+      
       document.getElementById("receipt-total").innerText = formatRupiah(trx.total);
 
       const changeSection = document.getElementById("receipt-change-section");
@@ -2105,7 +2183,7 @@ const firebaseConfig = {
                 </div>
                 <div>
                   <h4 class="font-bold text-sm text-slate-800">${out.name}</h4>
-                  <span class="text-[10px] text-slate-400 font-bold">${out.id}</span>
+                  <span class="text-[10px] text-slate-400 font-bold">ID: ${out.id}</span>
                 </div>
               </div>
               <p class="text-xs text-slate-500 leading-relaxed mb-4"><i class="fa-solid fa-location-dot text-emerald-600 mr-1"></i> ${out.address}</p>
@@ -2561,6 +2639,7 @@ const firebaseConfig = {
       document.getElementById("setting-store-phone").value = settings.phone || "08123456789";
       document.getElementById("setting-store-address").value = settings.address || "";
       document.getElementById("setting-store-footer").value = settings.footerText || "";
+      document.getElementById("setting-store-tax").value = typeof settings.taxRate !== 'undefined' ? settings.taxRate : 10;
     }
 
     document.getElementById("settings-form").addEventListener("submit", async function(e) {
@@ -2570,7 +2649,8 @@ const firebaseConfig = {
         storeName: document.getElementById("setting-store-name").value.trim(),
         phone: document.getElementById("setting-store-phone").value.trim(),
         address: document.getElementById("setting-store-address").value.trim(),
-        footerText: document.getElementById("setting-store-footer").value.trim()
+        footerText: document.getElementById("setting-store-footer").value.trim(),
+        taxRate: parseInt(document.getElementById("setting-store-tax").value) || 0
       };
 
       if (!IS_PREVIEW && dbRef) {
@@ -2590,6 +2670,171 @@ const firebaseConfig = {
 
       showToast("Pengaturan struk & toko berhasil disimpan!");
     });
+
+    // ================= FITUR BACKUP, RESTORE & WIPE DATABASE =================
+
+    // Ekspor Database (Backup)
+    window.backupDatabase = function() {
+      try {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `BakoelanDimsum_Backup_${new Date().toISOString().slice(0,10)}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+        showToast("Database berhasil diekspor ke file lokal.", "success");
+      } catch (err) {
+        showToast("Gagal melakukan cadangan data: " + err.message, "error");
+      }
+    };
+
+    // Impor Database (Restore)
+    window.restoreDatabase = async function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const importedData = JSON.parse(e.target.result);
+          
+          // Validasi struktur berkas JSON
+          if (!importedData.products || !importedData.transactions || !importedData.outlets || !importedData.employees || !importedData.users || !importedData.settings) {
+            showToast("Format file cadangan tidak valid!", "error");
+            return;
+          }
+
+          showConfirm(
+            "Konfirmasi Pulihkan Data", 
+            "Apakah Anda yakin ingin memulihkan data dari file cadangan ini? Tindakan ini akan menimpa semua data saat ini secara permanen.", 
+            async () => {
+              appData = importedData;
+
+              if (!IS_PREVIEW && dbRef) {
+                try {
+                  document.getElementById("loader").classList.remove("opacity-0", "pointer-events-none");
+                  const pRef = dbRef.collection('artifacts').doc(appId).collection('public').doc('data');
+
+                  // Menyimpan ulang konfigurasi dasar ke Firestore
+                  await pRef.collection('settings').doc('config').set(appData.settings);
+
+                  // Memperbarui semua data secara serial
+                  for (let item of appData.products) {
+                    await pRef.collection('products').doc(item.id).set(item);
+                  }
+                  for (let item of appData.outlets) {
+                    await pRef.collection('outlets').doc(item.id).set(item);
+                  }
+                  for (let item of appData.employees) {
+                    await pRef.collection('employees').doc(item.id).set(item);
+                  }
+                  for (let item of appData.users) {
+                    await pRef.collection('users').doc(item.id).set(item);
+                  }
+                  for (let item of appData.transactions) {
+                    await pRef.collection('transactions').doc(item.id).set(item);
+                  }
+                  
+                  await loadFirebaseData();
+                } catch (err) {
+                  showToast("Gagal menyinkronkan data ke Cloud Firestore: " + err.message, "error");
+                } finally {
+                  document.getElementById("loader").classList.add("opacity-0", "pointer-events-none");
+                }
+              } else {
+                saveToLocalCache();
+              }
+
+              showToast("Database berhasil dipulihkan dari cadangan JSON!", "success");
+              switchTab('dashboard');
+            }
+          );
+        } catch (err) {
+          showToast("Gagal memproses file JSON: " + err.message, "error");
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = ''; // Reset input
+    };
+
+    // Kosongkan Seluruh Data (Wipe)
+    window.wipeDatabase = function() {
+      showConfirm(
+        "Hapus Seluruh Data?", 
+        "Tindakan ini akan menghapus semua menu produk, outlet, karyawan, dan seluruh riwayat transaksi secara permanen. Akun Owner default akan dipertahankan agar Anda tidak terkunci. Lanjutkan?", 
+        async () => {
+          const loadedProducts = [...appData.products];
+          const loadedTransactions = [...appData.transactions];
+          const loadedOutlets = [...appData.outlets];
+          const loadedEmployees = [...appData.employees];
+          const loadedUsers = [...appData.users];
+
+          // Reset model data local ke kondisi awal yang bersih
+          appData.products = [];
+          appData.transactions = [];
+          appData.outlets = [
+            { id: "OTL-001", name: "Outlet Pusat Jakarta", contact: "08123456789", address: "Jl. Merdeka No. 12" }
+          ];
+          appData.employees = [
+            { id: "EMP-003", name: "Dimas Saputra", role: "Owner", phone: "08112233445", outletId: "OTL-001" }
+          ];
+          appData.users = [
+            { id: "ACC-003", employeeId: "EMP-003", name: "Dimas Saputra", username: "owner", password: "123", outletId: "OTL-001", role: "owner" }
+          ];
+          appData.settings = {
+            storeName: "Bakoelan Dimsum",
+            phone: "081234567890",
+            address: "Jl. Merdeka Raya Utama No. 42, Cabang Jakarta",
+            footerText: "Terima Kasih atas Kunjungan Anda!",
+            taxRate: 10
+          };
+
+          if (!IS_PREVIEW && dbRef) {
+            try {
+              document.getElementById("loader").classList.remove("opacity-0", "pointer-events-none");
+              const pRef = dbRef.collection('artifacts').doc(appId).collection('public').doc('data');
+
+              const batch = dbRef.batch();
+              for (let item of loadedProducts) {
+                batch.delete(pRef.collection('products').doc(item.id));
+              }
+              for (let item of loadedTransactions) {
+                batch.delete(pRef.collection('transactions').doc(item.id));
+              }
+              for (let item of loadedOutlets) {
+                batch.delete(pRef.collection('outlets').doc(item.id));
+              }
+              for (let item of loadedEmployees) {
+                batch.delete(pRef.collection('employees').doc(item.id));
+              }
+              for (let item of loadedUsers) {
+                batch.delete(pRef.collection('users').doc(item.id));
+              }
+              await batch.commit();
+
+              // Menyuntikkan kembali akun Owner utama default di cloud
+              await pRef.collection('outlets').doc("OTL-001").set(appData.outlets[0]);
+              await pRef.collection('employees').doc("EMP-003").set(appData.employees[0]);
+              await pRef.collection('users').doc("ACC-003").set(appData.users[0]);
+              await pRef.collection('settings').doc('config').set(appData.settings);
+
+              await loadFirebaseData();
+            } catch (err) {
+              showToast("Gagal mengosongkan data di server cloud: " + err.message, "error");
+            } finally {
+              document.getElementById("loader").classList.add("opacity-0", "pointer-events-none");
+            }
+          } else {
+            saveToLocalCache();
+          }
+
+          showToast("Database berhasil dikosongkan!", "success");
+          switchTab('dashboard');
+        }
+      );
+    };
+
   </script>
 
   <!-- PWA Service Worker Register -->
