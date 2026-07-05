@@ -1367,90 +1367,19 @@ const firebaseConfig = {
     // ================= DUMMY DATABASE GENERATOR (AUTOSETUP) =================
     function autoSetupDatabase() {
       // 1. Cabang Outlet Awal
-      appData.outlets = [
-        { id: "OTL-001", name: "Outlet Pusat Jakarta", contact: "08123456789", address: "Jl. Merdeka No. 12" },
-        { id: "OTL-002", name: "Outlet Bogor", contact: "08198765432", address: "Jl. Pajajaran No. 8" },
-        { id: "OTL-003", name: "Outlet Depok Margonda", contact: "08121122334", address: "Jl. Margonda Raya No. 120" }
-      ];
+      appData.outlets = [];
 
-      // 2. Daftar Menu Dimsum & Minuman dengan Penugasan Outlet (dan Foto Optional sebagai demonstrasi)
-      appData.products = [
-        { id: "PRD-001", name: "Dimsum Siomay Ayam", price: 18000, category: "Makanan", stock: 150, outletId: "all", imageUrl: "https://images.unsplash.com/photo-1496116211223-49a195501c65?auto=format&fit=crop&w=400&q=80" },
-        { id: "PRD-002", name: "Dimsum Hakau Udang", price: 22000, category: "Makanan", stock: 80, outletId: "OTL-001", imageUrl: "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=400&q=80" },
-        { id: "PRD-003", name: "Dimsum Lumpia Kulit Tahu", price: 20000, category: "Makanan", stock: 120, outletId: "all", imageUrl: "" },
-        { id: "PRD-004", name: "Kei-Chak (Dimsum Kaki Ayam)", price: 16000, category: "Makanan", stock: 45, outletId: "OTL-001", imageUrl: "" },
-        { id: "PRD-005", name: "Dimsum Bakpao Telur Asin", price: 19000, category: "Makanan", stock: 90, outletId: "OTL-002", imageUrl: "" },
-        { id: "PRD-006", name: "Es Teh Manis Selasih", price: 8000, category: "Minuman", stock: 300, outletId: "all", imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=400&q=80" },
-        { id: "PRD-007", name: "Es Jeruk Peras Murni", price: 12000, category: "Minuman", stock: 100, outletId: "all", imageUrl: "" },
-        { id: "PRD-008", name: "Badak Sarsaparilla", price: 15000, category: "Minuman", stock: 50, outletId: "OTL-003", imageUrl: "" }
-      ];
+      // 2. Daftar Menu Dimsum & Minuman
+      appData.products = [];
 
-      // 3. Data Karyawan (Hanya memiliki jabatan Owner atau Kasir)
-      appData.employees = [
-        { id: "EMP-001", name: "Daus Achmad", role: "Kasir", phone: "08988776655", outletId: "OTL-001" },
-        { id: "EMP-002", name: "Anisa Fitri", role: "Kasir", phone: "08129988776", outletId: "OTL-002" },
-        { id: "EMP-003", name: "Dimas Saputra", role: "Owner", phone: "08112233445", outletId: "OTL-001" }
-      ];
+      // 3. Data Karyawan
+      appData.employees = [];
 
       // 4. Akun Staf / Kasir
-      appData.users = [
-        { id: "ACC-001", employeeId: "EMP-001", name: "Daus Achmad", username: "daus", password: "123", outletId: "OTL-001", role: "kasir" },
-        { id: "ACC-002", employeeId: "EMP-002", name: "Anisa Fitri", username: "anisa", password: "123", outletId: "OTL-002", role: "kasir" }
-      ];
+      appData.users = [];
 
-      // 5. Histori Transaksi Penjualan Dummy
-      appData.transactions = [
-        { 
-          id: "TRX-4235", 
-          date: "2026-07-01T11:20:00.000Z", 
-          outletId: "OTL-001", 
-          cashierName: "Daus Achmad", 
-          items: [
-            { id: "PRD-001", name: "Dimsum Siomay Ayam", qty: 2, price: 18000 }
-          ],
-          subtotal: 36000,
-          tax: 3600,
-          taxRate: 10,
-          total: 39600,
-          paymentMethod: "Tunai",
-          cashReceived: 50000,
-          change: 10400
-        },
-        { 
-          id: "TRX-3264", 
-          date: "2026-06-30T15:45:00.000Z", 
-          outletId: "OTL-001", 
-          cashierName: "Daus Achmad", 
-          items: [
-            { id: "PRD-002", name: "Dimsum Hakau Udang", qty: 1, price: 22000 },
-            { id: "PRD-006", name: "Es Teh Manis Selasih", qty: 1, price: 8000 }
-          ],
-          subtotal: 30000,
-          tax: 3000,
-          taxRate: 10,
-          total: 33000,
-          paymentMethod: "QRIS",
-          cashReceived: 33000,
-          change: 0
-        },
-        { 
-          id: "TRX-5249", 
-          date: "2026-06-30T19:10:00.000Z", 
-          outletId: "OTL-001", 
-          cashierName: "Daus Achmad", 
-          items: [
-            { id: "PRD-003", name: "Dimsum Lumpia Kulit Tahu", qty: 4, price: 20000 },
-            { id: "PRD-007", name: "Es Jeruk Peras Murni", qty: 2, price: 12000 }
-          ],
-          subtotal: 104000,
-          tax: 10400,
-          taxRate: 10,
-          total: 114400,
-          paymentMethod: "Tunai",
-          cashReceived: 120000,
-          change: 5600
-        }
-      ];
+      // 5. Histori Transaksi Penjualan
+      appData.transactions = [];
 
       saveToLocalCache();
     }
