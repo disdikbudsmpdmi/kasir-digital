@@ -489,12 +489,15 @@
               <input type="text" id="pos-search" oninput="filterPOSProducts()" class="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:border-emerald-500 transition text-sm font-semibold" placeholder="Cari menu dimsum atau minuman...">
             </div>
             
-            <!-- Category Filter -->
+            <!-- Category Filter (Dimsum Premium / Dimsum Mini / Minuman, dibuat otomatis dari data produk) -->
             <div class="flex gap-2 overflow-x-auto pb-1 no-scrollbar select-none" id="pos-categories">
-              <button onclick="filterPOSByCategory('all')" class="pos-cat-btn px-4 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl whitespace-nowrap transition-all shadow-sm">Semua</button>
-              <button onclick="filterPOSByCategory('Makanan')" class="pos-cat-btn px-4 py-2 bg-white text-slate-500 hover:text-slate-700 font-bold text-xs rounded-xl whitespace-nowrap transition-all border border-slate-200">Makanan</button>
-              <button onclick="filterPOSByCategory('Minuman')" class="pos-cat-btn px-4 py-2 bg-white text-slate-500 hover:text-slate-700 font-bold text-xs rounded-xl whitespace-nowrap transition-all border border-slate-200">Minuman</button>
+              <!-- Dynamic category chips rendered by renderPOSCategoryChips() -->
             </div>
+          </div>
+
+          <!-- Jenis Filter (hanya tampil jika kategori Dimsum Premium/Mini aktif, dibuat otomatis dari data produk) -->
+          <div id="pos-jenis-row" class="hidden flex gap-2 overflow-x-auto pb-1 no-scrollbar select-none">
+            <!-- Dynamic jenis chips rendered by renderPOSJenisChips() -->
           </div>
 
           <!-- POS Product Grid -->
@@ -809,8 +812,9 @@
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Kategori</label>
-            <select id="prod-category" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold bg-white" required>
-              <option value="Makanan">Makanan</option>
+            <select id="prod-category" onchange="toggleJenisField()" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold bg-white" required>
+              <option value="Dimsum Premium">Dimsum Premium</option>
+              <option value="Dimsum Mini">Dimsum Mini</option>
               <option value="Minuman">Minuman</option>
             </select>
           </div>
@@ -819,9 +823,31 @@
             <input type="number" id="prod-stock" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" required>
           </div>
         </div>
+        <div id="prod-jenis-wrap">
+          <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Jenis Dimsum</label>
+          <input type="text" id="prod-subcategory" list="jenis-suggestions" placeholder="Contoh: Mentai, Bakar, Kukus, Goreng" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold">
+          <datalist id="jenis-suggestions">
+            <option value="Mentai"></option>
+            <option value="Bakar"></option>
+            <option value="Kukus"></option>
+            <option value="Goreng"></option>
+          </datalist>
+        </div>
         <div>
           <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Harga Jual (Rupiah)</label>
           <input type="number" id="prod-price" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" required>
+        </div>
+        <div class="border border-slate-200 rounded-xl p-3.5 bg-slate-50/50">
+          <label class="flex items-center gap-2.5 cursor-pointer select-none">
+            <input type="checkbox" id="prod-has-topping" onchange="toggleToppingFields()" class="w-4 h-4 accent-emerald-600">
+            <span class="text-xs font-bold text-slate-600">Perlu pilih topping saat kasir jual menu ini (khusus Mentai)</span>
+          </label>
+          <div id="prod-topping-section" class="hidden mt-3 space-y-2">
+            <div id="prod-topping-list" class="space-y-2"></div>
+            <button type="button" onclick="addToppingRow()" class="text-xs font-bold text-emerald-600 hover:text-emerald-700">
+              <i class="fa-solid fa-plus mr-1"></i> Tambah pilihan topping
+            </button>
+          </div>
         </div>
         <div>
           <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Link URL Foto Produk (Opsional)</label>
@@ -845,6 +871,23 @@
           <button type="submit" class="px-5 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl">Simpan</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: PILIH TOPPING (KHUSUS SAAT KASIR JUAL MENU MENTAI) -->
+  <div id="topping-modal" class="fixed inset-0 z-[60] hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl relative">
+      <h4 class="text-lg font-bold text-slate-800 mb-1" id="topping-modal-title">Pilih Topping</h4>
+      <p class="text-xs text-slate-400 font-semibold mb-4">Pilih satu atau lebih topping sesuai request pelanggan.</p>
+      <div id="topping-modal-list" class="space-y-2 max-h-72 overflow-y-auto pr-1">
+        <!-- Dynamic topping checkboxes -->
+      </div>
+      <div class="flex justify-end gap-3 pt-5">
+        <button type="button" onclick="closeToppingModal()" class="px-4 py-2 text-slate-500 hover:text-slate-700 text-xs font-bold">Batal</button>
+        <button type="button" onclick="confirmToppingSelection()" class="px-5 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl hover:bg-emerald-700 transition">
+          <i class="fa-solid fa-cart-plus mr-1"></i> Masukkan ke Keranjang
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1138,8 +1181,14 @@ const firebaseConfig = {
 
     // POS Active State
     let cart = [];
+    let cartLineCounter = 0;
     let activeCategory = 'all';
+    let activeJenis = 'all';
     let selectedPaymentMethod = 'Tunai';
+    let toppingModalProductId = null;
+
+    // Draft daftar topping saat form produk dibuka (dipakai oleh addToppingRow / removeToppingRow)
+    let toppingDraft = [];
 
     // Global variables for environment-provided data
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -1237,45 +1286,17 @@ const firebaseConfig = {
               applyUserRoleUI();
               await loadFirebaseData();
               document.getElementById("login-screen").classList.add("hidden");
-              return;
-            }
-
-            if (!user) {
-              // Belum ada sesi sama sekali (baik anonim maupun asli).
-              // Buat sesi anonim dulu supaya Firestore Security Rules (request.auth != null)
-              // mengizinkan aplikasi MEMBACA data akun (users/outlets/dll) SEBELUM proses login,
-              // karena tanpa ini daftar akun kasir/owner tidak akan termuat dan login akan selalu gagal.
-              try {
-                await authRef.signInAnonymously();
-                // onAuthStateChanged akan terpanggil ulang secara otomatis dengan sesi anonim di atas
-              } catch (err) {
-                console.error("Gagal membuat sesi anonim awal:", err);
-                showToast("Gagal terhubung ke server otentikasi. Periksa koneksi Anda.", "error");
-                // Tetap coba muat data & tampilkan layar login sebagai fallback
-                await loadFirebaseData();
-                const savedFallback = sessionStorage.getItem("bakoelan_session");
-                if (savedFallback) {
-                  currentUser = JSON.parse(savedFallback);
-                  applyUserRoleUI();
-                  document.getElementById("login-screen").classList.add("hidden");
-                } else {
-                  document.getElementById("login-screen").classList.remove("hidden");
-                }
-              }
-              return;
-            }
-
-            // Sesi anonim aktif -> muat data publik (produk, outlet, karyawan, daftar akun login) SEKARANG,
-            // sebelum memutuskan mau menampilkan layar login atau memulihkan sesi tersimpan.
-            await loadFirebaseData();
-
-            const savedUser = sessionStorage.getItem("bakoelan_session");
-            if (savedUser) {
-              currentUser = JSON.parse(savedUser);
-              applyUserRoleUI();
-              document.getElementById("login-screen").classList.add("hidden");
             } else {
-              document.getElementById("login-screen").classList.remove("hidden");
+              // user null ATAU sesi anonim milik kasir -> Cek session kasir tersimpan
+              const savedUser = sessionStorage.getItem("bakoelan_session");
+              if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                applyUserRoleUI();
+                await loadFirebaseData();
+                document.getElementById("login-screen").classList.add("hidden");
+              } else {
+                document.getElementById("login-screen").classList.remove("hidden");
+              }
             }
           });
         } catch (err) {
@@ -1390,15 +1411,11 @@ const firebaseConfig = {
       if (currentUser.role === 'kasir') {
         // Sembunyikan menu owner
         document.querySelectorAll('.owner-only').forEach(el => el.classList.add('hidden'));
-        // Kunci filter outlet ke gerai tempat kasir ditugaskan (tidak bisa lihat/pindah outlet lain)
-        updateGlobalOutletFilterOptions();
-        // Paksa switch ke POS sebagai default tab, otomatis mengarah ke halaman outletnya sendiri
+        // Paksa switch ke POS sebagai default tab
         setTimeout(() => switchTab('pos'), 100);
       } else {
         // Tampilkan semua menu jika owner
         document.querySelectorAll('.owner-only').forEach(el => el.classList.remove('hidden'));
-        // Owner bebas memilih outlet manapun, termasuk "Semua Outlet"
-        updateGlobalOutletFilterOptions();
       }
     }
 
@@ -1717,45 +1734,15 @@ const firebaseConfig = {
       });
     }
 
-    // Bangun ulang opsi filter outlet global sesuai peran yang sedang login.
-    // Kasir: dikunci hanya pada outlet tempat ia ditugaskan (tidak bisa lihat/pindah outlet lain).
-    // Owner: bebas memilih outlet manapun, termasuk "Semua Outlet".
-    function updateGlobalOutletFilterOptions() {
-      const selectHeader = document.getElementById("global-outlet-filter");
-      if (!selectHeader) return;
-
-      const isKasir = currentUser && currentUser.role === 'kasir';
-
-      if (isKasir && currentUser.outletId && currentUser.outletId !== 'all') {
-        const myOutlet = appData.outlets.find(o => o.id === currentUser.outletId);
-        const myOutletName = myOutlet ? myOutlet.name : "Outlet Saya";
-
-        selectHeader.innerHTML = `<option value="${currentUser.outletId}">${myOutletName}</option>`;
-        selectHeader.value = currentUser.outletId;
-        selectHeader.disabled = true;
-        selectHeader.title = "Kasir hanya dapat melihat outlet tempat ia ditugaskan.";
-        selectHeader.classList.add("opacity-70", "cursor-not-allowed");
-
-        globalActiveOutlet = currentUser.outletId;
-      } else {
-        const currentVal = selectHeader.value || "all";
-        selectHeader.innerHTML = `<option value="all">Semua Outlet / Pusat</option>`;
-        appData.outlets.forEach(out => {
-          selectHeader.innerHTML += `<option value="${out.id}">${out.name}</option>`;
-        });
-        selectHeader.disabled = false;
-        selectHeader.title = "";
-        selectHeader.classList.remove("opacity-70", "cursor-not-allowed");
-
-        const validValues = Array.from(selectHeader.options).map(o => o.value);
-        selectHeader.value = validValues.includes(currentVal) ? currentVal : "all";
-        globalActiveOutlet = selectHeader.value;
-      }
-    }
-
     function updateUISelectMenus() {
-      // Filter Outlet di Header Top Bar (role-aware: kasir dikunci ke outletnya sendiri)
-      updateGlobalOutletFilterOptions();
+      // Filter Outlet di Header Top Bar
+      const selectHeader = document.getElementById("global-outlet-filter");
+      const currentVal = selectHeader.value;
+      selectHeader.innerHTML = `<option value="all">Semua Outlet / Pusat</option>`;
+      appData.outlets.forEach(out => {
+        selectHeader.innerHTML += `<option value="${out.id}">${out.name}</option>`;
+      });
+      selectHeader.value = currentVal;
 
       // Filter Penugasan Outlet di Form Karyawan
       const selectEmp = document.getElementById("emp-outlet");
@@ -1815,20 +1802,62 @@ const firebaseConfig = {
 
     // ================= TAB: POS KASIR LOGIC =================
     function loadPOS() {
+      renderPOSCategoryChips();
+      renderPOSJenisChips();
       filterPOSProducts();
       renderCart();
     }
 
+    // Render chip kategori (Dimsum Premium / Dimsum Mini / Minuman, dll) berdasarkan data produk yang ada.
+    function renderPOSCategoryChips() {
+      const container = document.getElementById("pos-categories");
+      const cats = Array.from(new Set(appData.products.map(p => p.category).filter(Boolean)));
+
+      const activeCls = "pos-cat-btn px-4 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl whitespace-nowrap transition-all shadow-sm";
+      const inactiveCls = "pos-cat-btn px-4 py-2 bg-white text-slate-500 hover:text-slate-700 font-bold text-xs rounded-xl whitespace-nowrap transition-all border border-slate-200";
+
+      let html = `<button onclick="filterPOSByCategory('all')" class="${activeCategory === 'all' ? activeCls : inactiveCls}">Semua</button>`;
+      cats.forEach(c => {
+        html += `<button onclick="filterPOSByCategory('${c}')" class="${activeCategory === c ? activeCls : inactiveCls}">${c}</button>`;
+      });
+      container.innerHTML = html;
+    }
+
+    // Render chip jenis (Mentai/Bakar/Kukus/Goreng, dll) — hanya muncul jika kategori aktif punya jenis.
+    function renderPOSJenisChips() {
+      const row = document.getElementById("pos-jenis-row");
+
+      const relevantProducts = appData.products.filter(p => activeCategory === 'all' || p.category === activeCategory);
+      const jenisList = Array.from(new Set(relevantProducts.map(p => p.subCategory).filter(Boolean)));
+
+      if (jenisList.length === 0) {
+        row.classList.add("hidden");
+        row.innerHTML = "";
+        return;
+      }
+
+      row.classList.remove("hidden");
+      const activeCls = "pos-jenis-btn px-3 py-1.5 bg-slate-800 text-white font-bold text-[11px] rounded-lg whitespace-nowrap transition-all";
+      const inactiveCls = "pos-jenis-btn px-3 py-1.5 bg-white text-slate-500 hover:text-slate-700 font-bold text-[11px] rounded-lg whitespace-nowrap transition-all border border-slate-200";
+
+      let html = `<button onclick="filterPOSByJenis('all')" class="${activeJenis === 'all' ? activeCls : inactiveCls}">Semua jenis</button>`;
+      jenisList.forEach(j => {
+        html += `<button onclick="filterPOSByJenis('${j}')" class="${activeJenis === j ? activeCls : inactiveCls}">${j}</button>`;
+      });
+      row.innerHTML = html;
+    }
+
     function filterPOSByCategory(category) {
       activeCategory = category;
-      
-      // Ganti state styling button category
-      document.querySelectorAll('.pos-cat-btn').forEach(btn => {
-        btn.className = "pos-cat-btn px-4 py-2 bg-white text-slate-500 hover:text-slate-700 font-bold text-xs rounded-xl whitespace-nowrap transition-all border border-slate-200";
-      });
+      activeJenis = 'all';
+      renderPOSCategoryChips();
+      renderPOSJenisChips();
+      filterPOSProducts();
+    }
 
-      // Cari button terpilih
-      event.currentTarget.className = "pos-cat-btn px-4 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl whitespace-nowrap transition-all shadow-sm";
+    function filterPOSByJenis(jenis) {
+      activeJenis = jenis;
+      renderPOSJenisChips();
       filterPOSProducts();
     }
 
@@ -1839,13 +1868,14 @@ const firebaseConfig = {
 
       const filtered = appData.products.filter(p => {
         const matchesCategory = (activeCategory === 'all' || p.category === activeCategory);
+        const matchesJenis = (activeJenis === 'all' || p.subCategory === activeJenis);
         const matchesSearch = p.name.toLowerCase().includes(searchVal);
         
         // Filter POS Berdasarkan Penugasan Outlet:
         // Produk ditampilkan jika ditugaskan untuk 'all' atau cocok dengan filter outlet aktif saat ini.
         const matchesOutlet = (p.outletId === 'all' || !p.outletId || globalActiveOutlet === 'all' || p.outletId === globalActiveOutlet);
         
-        return matchesCategory && matchesSearch && matchesOutlet;
+        return matchesCategory && matchesJenis && matchesSearch && matchesOutlet;
       });
 
       if (filtered.length === 0) {
@@ -1887,10 +1917,13 @@ const firebaseConfig = {
             <div class="mt-3">
               <div class="flex items-center justify-between gap-1 mb-1">
                 <span class="text-[9px] font-bold uppercase ${p.stock < 10 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'} px-2 py-0.5 rounded">Stok: ${p.stock}</span>
-                <span class="text-[9px] font-bold text-slate-400 truncate max-w-[50%]">${p.category}</span>
+                <span class="text-[9px] font-bold text-slate-400 truncate max-w-[50%]">${p.subCategory || p.category}</span>
               </div>
               <h5 class="font-bold text-xs text-slate-800 line-clamp-1">${p.name}</h5>
-              <span class="block font-extrabold text-xs text-emerald-600 mt-1">${formatRupiah(p.price)}</span>
+              <div class="flex items-center justify-between gap-1 mt-1">
+                <span class="block font-extrabold text-xs text-emerald-600">${formatRupiah(p.price)}</span>
+                ${p.hasTopping ? `<span class="text-[9px] font-bold uppercase text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded"><i class="fa-solid fa-layer-group mr-0.5"></i>Topping</span>` : ''}
+              </div>
             </div>
             ${isOutOfStock ? `
               <div class="absolute inset-0 bg-white/70 flex items-center justify-center rounded-2xl">
@@ -1902,51 +1935,121 @@ const firebaseConfig = {
       });
     }
 
+    // ================= ALUR PILIH TOPPING (KHUSUS MENTAI) =================
+    // Dipanggil saat kasir klik menu yang butuh topping (product.hasTopping = true)
+    function openToppingModal(productId) {
+      const product = appData.products.find(p => p.id === productId);
+      if (!product) return;
+
+      toppingModalProductId = productId;
+      document.getElementById("topping-modal-title").innerText = `Pilih Topping — ${product.name}`;
+
+      const list = document.getElementById("topping-modal-list");
+      const toppings = Array.isArray(product.toppings) ? product.toppings : [];
+
+      if (toppings.length === 0) {
+        // Fallback: menu ditandai butuh topping tapi belum ada daftar topping diisi di menu produk
+        list.innerHTML = `<p class="text-xs text-slate-400 font-semibold text-center py-6">Belum ada daftar topping untuk menu ini. Silakan lengkapi di Manajemen Produk.</p>`;
+      } else {
+        list.innerHTML = toppings.map((t, i) => `
+          <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-xl cursor-pointer hover:border-emerald-500 transition">
+            <input type="checkbox" value="${t.name}" class="topping-modal-checkbox w-4 h-4 accent-emerald-600">
+            <span class="text-sm font-semibold text-slate-700 flex-1">${t.name}</span>
+          </label>
+        `).join("");
+      }
+
+      document.getElementById("topping-modal").classList.remove("hidden");
+    }
+
+    function closeToppingModal() {
+      document.getElementById("topping-modal").classList.add("hidden");
+      toppingModalProductId = null;
+    }
+
+    function confirmToppingSelection() {
+      const checked = Array.from(document.querySelectorAll(".topping-modal-checkbox:checked")).map(cb => cb.value);
+      if (checked.length === 0) {
+        showToast("Pilih minimal 1 topping sesuai request pelanggan.", "warning");
+        return;
+      }
+      const product = appData.products.find(p => p.id === toppingModalProductId);
+      if (!product) return;
+
+      addProductToCart(product, checked);
+      closeToppingModal();
+    }
+
     // Cart Management
+    // Titik masuk dari klik kartu menu POS. Jika menu butuh topping (misal Mentai), buka modal pilih topping dulu.
     function addToCart(productId) {
       const product = appData.products.find(p => p.id === productId);
       if (!product) return;
 
-      const existingCartItem = cart.find(item => item.id === productId);
+      if (product.hasTopping) {
+        openToppingModal(productId);
+        return;
+      }
+
+      addProductToCart(product, []);
+    }
+
+    // Menambahkan produk ke keranjang. selectedToppings dipakai khusus menu bertipe topping (misal Mentai).
+    function addProductToCart(product, selectedToppings) {
+      const toppings = selectedToppings || [];
+      const toppingKey = toppings.slice().sort().join(', ');
+
+      // Jumlah yang sudah ada di keranjang untuk produk ini (gabungan semua baris topping) dipakai untuk cek batas stok.
+      const totalQtyInCart = cart.filter(i => i.id === product.id).reduce((sum, i) => sum + i.qty, 0);
+      if (totalQtyInCart >= product.stock) {
+        showToast(`Stok ${product.name} terbatas!`, "warning");
+        return;
+      }
+
+      // Baris keranjang dianggap sama jika produk & kombinasi topping-nya identik.
+      const existingCartItem = cart.find(item => item.id === product.id && (item.toppingKey || '') === toppingKey);
       if (existingCartItem) {
-        if (existingCartItem.qty >= product.stock) {
-          showToast(`Stok ${product.name} terbatas!`, "warning");
-          return;
-        }
         existingCartItem.qty += 1;
       } else {
+        cartLineCounter += 1;
         cart.push({
+          lineId: 'LINE-' + cartLineCounter,
           id: product.id,
           name: product.name,
           price: product.price,
-          qty: 1
+          qty: 1,
+          toppings: toppings,
+          toppingKey: toppingKey
         });
       }
 
       renderCart();
-      showToast(`${product.name} masuk keranjang.`);
+      showToast(`${product.name}${toppings.length ? ' (' + toppings.join(', ') + ')' : ''} masuk keranjang.`);
     }
 
-    function updateCartQty(productId, delta) {
-      const item = cart.find(i => i.id === productId);
-      const product = appData.products.find(p => p.id === productId);
+    function updateCartQty(lineId, delta) {
+      const item = cart.find(i => i.lineId === lineId);
       if (!item) return;
+      const product = appData.products.find(p => p.id === item.id);
 
-      if (delta > 0 && item.qty >= product.stock) {
-        showToast("Mencapai batas stok tersedia!", "warning");
-        return;
+      if (delta > 0) {
+        const totalQtyInCart = cart.filter(i => i.id === item.id).reduce((sum, i) => sum + i.qty, 0);
+        if (product && totalQtyInCart >= product.stock) {
+          showToast("Mencapai batas stok tersedia!", "warning");
+          return;
+        }
       }
 
       item.qty += delta;
       if (item.qty <= 0) {
-        cart = cart.filter(i => i.id !== productId);
+        cart = cart.filter(i => i.lineId !== lineId);
       }
       renderCart();
     }
 
     // Menghapus item dari keranjang
-    function removeFromCart(productId) {
-      cart = cart.filter(i => i.id !== productId);
+    function removeFromCart(lineId) {
+      cart = cart.filter(i => i.lineId !== lineId);
       renderCart();
     }
 
@@ -1979,18 +2082,20 @@ const firebaseConfig = {
       cart.forEach(item => {
         const itemTotal = item.price * item.qty;
         subtotal += itemTotal;
+        const toppingLabel = (item.toppings && item.toppings.length) ? item.toppings.join(', ') : '';
 
         container.innerHTML += `
           <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-2xl">
             <div class="flex-1 min-w-0 pr-2">
               <h5 class="font-bold text-xs text-slate-800 truncate">${item.name}</h5>
+              ${toppingLabel ? `<span class="block text-[10px] text-emerald-600 font-bold truncate"><i class="fa-solid fa-layer-group mr-1"></i>${toppingLabel}</span>` : ''}
               <span class="text-[10px] text-slate-400 font-bold">${formatRupiah(item.price)}</span>
             </div>
             <div class="flex items-center gap-2">
-              <button onclick="updateCartQty('${item.id}', -1)" class="w-7 h-7 bg-white text-slate-600 rounded-lg flex items-center justify-center border border-slate-200 hover:bg-slate-50"><i class="fa-solid fa-minus text-[10px]"></i></button>
+              <button onclick="updateCartQty('${item.lineId}', -1)" class="w-7 h-7 bg-white text-slate-600 rounded-lg flex items-center justify-center border border-slate-200 hover:bg-slate-50"><i class="fa-solid fa-minus text-[10px]"></i></button>
               <span class="font-bold text-xs text-slate-800 w-5 text-center">${item.qty}</span>
-              <button onclick="updateCartQty('${item.id}', 1)" class="w-7 h-7 bg-white text-slate-600 rounded-lg flex items-center justify-center border border-slate-200 hover:bg-slate-50"><i class="fa-solid fa-plus text-[10px]"></i></button>
-              <button onclick="removeFromCart('${item.id}')" class="text-red-500 hover:text-red-600 text-sm ml-1.5"><i class="fa-solid fa-trash-can"></i></button>
+              <button onclick="updateCartQty('${item.lineId}', 1)" class="w-7 h-7 bg-white text-slate-600 rounded-lg flex items-center justify-center border border-slate-200 hover:bg-slate-50"><i class="fa-solid fa-plus text-[10px]"></i></button>
+              <button onclick="removeFromCart('${item.lineId}')" class="text-red-500 hover:text-red-600 text-sm ml-1.5"><i class="fa-solid fa-trash-can"></i></button>
             </div>
           </div>
         `;
@@ -2093,6 +2198,12 @@ const firebaseConfig = {
         change: change
       };
 
+      // Gabungkan qty per produk dulu (satu produk bisa muncul di beberapa baris keranjang dengan topping berbeda)
+      const qtyPerProduct = {};
+      cart.forEach(item => {
+        qtyPerProduct[item.id] = (qtyPerProduct[item.id] || 0) + item.qty;
+      });
+
       // Simpan transaksi
       if (!IS_PREVIEW && dbRef) {
         try {
@@ -2100,11 +2211,11 @@ const firebaseConfig = {
           const pRef = dbRef.collection('artifacts').doc(appId).collection('public').doc('data');
           
           // Kurangi stok produk secara paralel di cloud
-          for (let item of cart) {
-            const currentProd = appData.products.find(p => p.id === item.id);
+          for (let productId in qtyPerProduct) {
+            const currentProd = appData.products.find(p => p.id === productId);
             if (currentProd) {
-              const newStock = Math.max(0, currentProd.stock - item.qty);
-              await pRef.collection('products').doc(item.id).update({ stock: newStock });
+              const newStock = Math.max(0, currentProd.stock - qtyPerProduct[productId]);
+              await pRef.collection('products').doc(productId).update({ stock: newStock });
             }
           }
           
@@ -2119,13 +2230,16 @@ const firebaseConfig = {
         }
       } else {
         // Kurangi stok lokal
-        cart.forEach(item => {
-          const prod = appData.products.find(p => p.id === item.id);
-          if (prod) prod.stock = Math.max(0, prod.stock - item.qty);
-        });
+        for (let productId in qtyPerProduct) {
+          const prod = appData.products.find(p => p.id === productId);
+          if (prod) prod.stock = Math.max(0, prod.stock - qtyPerProduct[productId]);
+        }
 
         saveLocalTrx(payload);
       }
+
+      // Notifikasi stok menipis untuk menu yang baru saja terjual
+      checkLowStockAfterCheckout(qtyPerProduct);
 
       // Tampilkan struk termal virtual
       renderThermalReceipt(payload);
@@ -2135,6 +2249,19 @@ const firebaseConfig = {
       document.getElementById("cash-received-input").value = "";
       renderCart();
       showToast("Transaksi Berhasil Diproses!");
+    }
+
+    // Beri peringatan jika stok menu yang baru terjual sudah menipis (<=5) atau habis
+    function checkLowStockAfterCheckout(qtyPerProduct) {
+      Object.keys(qtyPerProduct).forEach(productId => {
+        const prod = appData.products.find(p => p.id === productId);
+        if (!prod) return;
+        if (prod.stock <= 0) {
+          showToast(`Stok "${prod.name}" sudah habis. Segera restok!`, "error");
+        } else if (prod.stock <= 5) {
+          showToast(`Stok "${prod.name}" tersisa ${prod.stock}, mulai menipis.`, "warning");
+        }
+      });
     }
 
     function saveLocalTrx(trx) {
@@ -2159,9 +2286,10 @@ const firebaseConfig = {
       const itemsContainer = document.getElementById("receipt-items-container");
       itemsContainer.innerHTML = "";
       trx.items.forEach(item => {
+        const toppingLabel = (item.toppings && item.toppings.length) ? item.toppings.join(', ') : '';
         itemsContainer.innerHTML += `
           <div class="flex justify-between">
-            <span class="flex-1">${item.name} (${item.qty}x)</span>
+            <span class="flex-1">${item.name} (${item.qty}x)${toppingLabel ? `<br><span class="text-[10px]">Topping: ${toppingLabel}</span>` : ''}</span>
             <span>${formatRupiah(item.price * item.qty)}</span>
           </div>
         `;
@@ -2258,7 +2386,11 @@ const firebaseConfig = {
                 <span class="text-[10px] text-slate-400 font-semibold">${p.id}</span>
               </div>
             </td>
-            <td class="py-4 px-6 text-slate-500">${p.category}</td>
+            <td class="py-4 px-6 text-slate-500">
+              <span class="block">${p.category}</span>
+              ${p.subCategory ? `<span class="text-[10px] text-slate-400 font-semibold">${p.subCategory}</span>` : ''}
+              ${p.hasTopping ? `<span class="inline-block mt-1 text-[9px] font-bold uppercase text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded"><i class="fa-solid fa-layer-group mr-0.5"></i>Pakai topping</span>` : ''}
+            </td>
             <td class="py-4 px-6 text-emerald-600 font-bold">${formatRupiah(p.price)}</td>
             <td class="py-4 px-6 text-center">
               <span class="inline-block px-2.5 py-1 text-xs font-bold rounded-lg ${p.stock < 10 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-50' }">${p.stock}</span>
@@ -2339,7 +2471,10 @@ const firebaseConfig = {
         document.getElementById("product-modal-title").innerText = "Tambah Menu Baru";
         document.getElementById("product-id").value = "";
         document.getElementById("prod-image-url").value = "";
+        document.getElementById("prod-subcategory").value = "";
+        document.getElementById("prod-has-topping").checked = false;
         prodOutletSelect.value = "all";
+        toppingDraft = [];
       } else {
         document.getElementById("product-modal-title").innerText = "Edit Menu Detail";
         const p = appData.products.find(prod => prod.id === id);
@@ -2347,14 +2482,67 @@ const firebaseConfig = {
           document.getElementById("product-id").value = p.id;
           document.getElementById("prod-name").value = p.name;
           document.getElementById("prod-category").value = p.category;
+          document.getElementById("prod-subcategory").value = p.subCategory || "";
           document.getElementById("prod-stock").value = p.stock;
           document.getElementById("prod-price").value = p.price;
           document.getElementById("prod-image-url").value = p.imageUrl || "";
+          document.getElementById("prod-has-topping").checked = !!p.hasTopping;
           prodOutletSelect.value = p.outletId || "all";
+          toppingDraft = Array.isArray(p.toppings) ? p.toppings.map(t => t.name) : [];
         }
       }
+      toggleJenisField();
+      toggleToppingFields();
+      renderToppingDraftUI();
       document.getElementById("product-modal").classList.remove("hidden");
       previewProductImage();
+    }
+
+    // Sembunyikan field Jenis Dimsum jika kategori yang dipilih bukan Dimsum Premium/Mini (misal Minuman)
+    function toggleJenisField() {
+      const category = document.getElementById("prod-category").value;
+      const wrap = document.getElementById("prod-jenis-wrap");
+      wrap.classList.toggle("hidden", category === "Minuman");
+    }
+
+    // Tampilkan/sembunyikan pembuat daftar topping sesuai checkbox "Perlu pilih topping"
+    function toggleToppingFields() {
+      const checked = document.getElementById("prod-has-topping").checked;
+      const section = document.getElementById("prod-topping-section");
+      section.classList.toggle("hidden", !checked);
+      if (checked && toppingDraft.length === 0) {
+        toppingDraft = [""];
+        renderToppingDraftUI();
+      }
+    }
+
+    // Tambah satu baris input topping baru ke draft
+    function addToppingRow() {
+      toppingDraft.push("");
+      renderToppingDraftUI();
+    }
+
+    // Hapus satu baris topping dari draft berdasarkan index
+    function removeToppingRow(index) {
+      toppingDraft.splice(index, 1);
+      renderToppingDraftUI();
+    }
+
+    // Update nilai nama topping di draft saat kasir/owner mengetik
+    function updateToppingDraftValue(index, value) {
+      toppingDraft[index] = value;
+    }
+
+    // Render ulang daftar input topping berdasarkan toppingDraft
+    function renderToppingDraftUI() {
+      const list = document.getElementById("prod-topping-list");
+      if (!list) return;
+      list.innerHTML = toppingDraft.map((name, i) => `
+        <div class="flex items-center gap-2">
+          <input type="text" value="${name}" oninput="updateToppingDraftValue(${i}, this.value)" placeholder="Contoh: Original, Cheese, Salted Egg" class="flex-1 px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-emerald-500 text-xs font-semibold">
+          <button type="button" onclick="removeToppingRow(${i})" class="text-red-500 hover:text-red-600 text-xs px-1"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      `).join("");
     }
 
     // Cek apakah sebuah URL bisa langsung dimuat sebagai gambar
@@ -2459,13 +2647,27 @@ const firebaseConfig = {
         finalImageUrl = resolved || "";
       }
 
+      const hasTopping = document.getElementById("prod-has-topping").checked;
+      // Bersihkan draft topping: buang baris kosong, ubah jadi objek {name}
+      const cleanedToppings = hasTopping
+        ? toppingDraft.map(t => t.trim()).filter(t => t !== "").map(name => ({ name }))
+        : [];
+
+      if (hasTopping && cleanedToppings.length === 0) {
+        showToast("Isi minimal 1 pilihan topping, atau matikan opsi topping.", "warning");
+        return;
+      }
+
       const payload = {
         name: document.getElementById("prod-name").value.trim(),
         category: document.getElementById("prod-category").value,
+        subCategory: document.getElementById("prod-subcategory").value.trim(),
         stock: parseInt(document.getElementById("prod-stock").value) || 0,
         price: parseInt(document.getElementById("prod-price").value) || 0,
         imageUrl: finalImageUrl,
-        outletId: document.getElementById("prod-outlet").value
+        outletId: document.getElementById("prod-outlet").value,
+        hasTopping: hasTopping,
+        toppings: cleanedToppings
       };
 
       if (!IS_PREVIEW && dbRef) {
