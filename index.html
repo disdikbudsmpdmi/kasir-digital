@@ -937,10 +937,10 @@
     <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl relative">
       <h4 class="text-lg font-bold text-slate-800 mb-1">Pilih Toping</h4>
       <p id="topping-select-product-name" class="text-xs text-slate-400 font-semibold mb-1">-</p>
-      <p class="text-[10px] text-slate-400 font-semibold mb-4"><i class="fa-solid fa-circle-info mr-1"></i>Bisa pilih lebih dari satu toping.</p>
+      <p class="text-[10px] text-slate-400 font-semibold mb-4"><i class="fa-solid fa-circle-info mr-1"></i>Bisa pilih toping berkali-kali. Atur jumlah masing-masing toping.</p>
       <input type="hidden" id="topping-select-product-id">
-      <div id="topping-select-list" class="space-y-2 max-h-[320px] overflow-y-auto pr-1">
-        <!-- Dynamic list toping -->
+      <div id="topping-select-list" class="space-y-3 max-h-[320px] overflow-y-auto pr-1">
+        <!-- Dynamic list toping with quantity selector -->
       </div>
       <div class="flex justify-end gap-3 pt-4">
         <button type="button" onclick="closeToppingSelectModal()" class="px-4 py-2 text-slate-500 hover:text-slate-700 text-xs font-bold">Batal</button>
@@ -2078,12 +2078,27 @@ const firebaseConfig = {
 
     // Fungsi inti penambahan ke keranjang, dipakai baik untuk produk biasa maupun produk + toping.
     // "toppings" adalah array objek toping (bisa lebih dari satu, atau array kosong jika tanpa toping).
+    // Sekarang mendukung duplicate toping (misal: ayam 2x)
     function addProductToCartInternal(product, toppings) {
       toppings = toppings || [];
-      const sortedToppings = [...toppings].sort((a, b) => a.id.localeCompare(b.id));
-      const lineId = sortedToppings.length > 0
-        ? `${product.id}::${sortedToppings.map(t => t.id).join(',')}`
-        : product.id;
+      
+      // Hitung jumlah masing-masing toping untuk lineId yang unik
+      const toppingCount = {};
+      toppings.forEach(t => {
+        toppingCount[t.id] = (toppingCount[t.id] || 0) + 1;
+      });
+      
+      // Buat lineId dengan format: produk::top1(qty),top2(qty)...
+      let lineId;
+      if (Object.keys(toppingCount).length > 0) {
+        const toppingParts = Object.keys(toppingCount)
+          .sort()
+          .map(id => `${id}(${toppingCount[id]})`)
+          .join(',');
+        lineId = `${product.id}::${toppingParts}`;
+      } else {
+        lineId = product.id;
+      }
 
       const existingCartItem = cart.find(item => item.lineId === lineId);
 
@@ -2092,7 +2107,8 @@ const firebaseConfig = {
           showToast(`Stok ${product.name} terbatas!`, "warning");
           return;
         }
-        for (const topping of sortedToppings) {
+        // Validasi stok untuk semua toping
+        for (const topping of toppings) {
           if (existingCartItem.qty >= topping.stock) {
             showToast(`Stok toping ${topping.name} terbatas!`, "warning");
             return;
@@ -2100,26 +2116,37 @@ const firebaseConfig = {
         }
         existingCartItem.qty += 1;
       } else {
-        for (const topping of sortedToppings) {
+        // Validasi stok toping sebelum tambah
+        for (const topping of toppings) {
           if (topping.stock <= 0) {
             showToast(`Stok toping ${topping.name} habis!`, "warning");
             return;
           }
         }
-        const toppingNames = sortedToppings.map(t => t.name);
+        
+        // Buat daftar toping dengan jumlah (misal: "Ayam 2x, Bawang 1x")
+        const toppingDisplayNames = [];
+        for (const [toppingId, qty] of Object.entries(toppingCount)) {
+          const topping = appData.toppings.find(t => t.id === toppingId);
+          if (topping) {
+            toppingDisplayNames.push(qty > 1 ? `${topping.name} ${qty}x` : topping.name);
+          }
+        }
+        
         cart.push({
           id: product.id,
           lineId: lineId,
-          name: toppingNames.length > 0 ? `${product.name} (Toping: ${toppingNames.join(', ')})` : product.name,
+          name: toppingDisplayNames.length > 0 ? `${product.name} (${toppingDisplayNames.join(', ')})` : product.name,
           price: product.price,
           qty: 1,
-          toppingIds: sortedToppings.map(t => t.id),
-          toppingNames: toppingNames
+          toppingIds: Object.keys(toppingCount),
+          toppingNames: toppingDisplayNames,
+          toppingQuantities: toppingCount
         });
       }
 
       renderCart();
-      showToast(`${product.name}${sortedToppings.length > 0 ? ' - ' + sortedToppings.map(t => t.name).join(', ') : ''} masuk keranjang.`);
+      showToast(`${product.name}${toppings.length > 0 ? ' - ' + toppingDisplayNames.join(', ') : ''} masuk keranjang.`);
     }
 
     function updateCartQty(lineId, delta) {
@@ -2132,7 +2159,17 @@ const firebaseConfig = {
           showToast("Mencapai batas stok tersedia!", "warning");
           return;
         }
-        if (item.toppingIds && item.toppingIds.length > 0) {
+        // Validasi stok untuk setiap toping (termasuk yang berulang)
+        if (item.toppingQuantities) {
+          for (const [toppingId, toppingQty] of Object.entries(item.toppingQuantities)) {
+            const topping = appData.toppings.find(t => t.id === toppingId);
+            if (topping && item.qty >= topping.stock) {
+              showToast(`Stok toping ${topping.name} terbatas!`, "warning");
+              return;
+            }
+          }
+        } else if (item.toppingIds && item.toppingIds.length > 0) {
+          // Backward compatibility untuk item lama
           for (const toppingId of item.toppingIds) {
             const topping = appData.toppings.find(t => t.id === toppingId);
             if (topping && item.qty >= topping.stock) {
@@ -2234,17 +2271,45 @@ const firebaseConfig = {
         `;
       } else {
         list.innerHTML = availableToppings.map((t) => `
-          <label class="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 hover:border-emerald-500 cursor-pointer transition">
-            <span class="flex items-center gap-2.5">
-              <input type="checkbox" name="topping-select-checkbox" value="${t.id}" class="w-4 h-4 accent-emerald-600 rounded">
+          <div class="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 hover:border-emerald-500 transition">
+            <div class="flex-1">
               <span class="text-sm font-bold text-slate-700">${t.name}</span>
-            </span>
-            <span class="text-[10px] font-bold ${t.stock < 10 ? 'text-amber-600' : 'text-slate-400'}">Stok: ${t.stock}</span>
-          </label>
+              <span class="text-[10px] font-bold ${t.stock < 10 ? 'text-amber-600' : 'text-slate-400'} block">Stok: ${t.stock}</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button type="button" onclick="decrementToppingQty('topping-qty-${t.id}')" class="w-6 h-6 bg-slate-100 text-slate-600 rounded flex items-center justify-center hover:bg-slate-200 font-bold text-sm">−</button>
+              <input type="number" id="topping-qty-${t.id}" value="0" min="0" max="${t.stock}" class="w-10 text-center px-1.5 py-1 rounded border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-bold" onchange="validateToppingQty('topping-qty-${t.id}', ${t.stock})">
+              <button type="button" onclick="incrementToppingQty('topping-qty-${t.id}', ${t.stock})" class="w-6 h-6 bg-emerald-100 text-emerald-600 rounded flex items-center justify-center hover:bg-emerald-200 font-bold text-sm">+</button>
+            </div>
+          </div>
         `).join('');
       }
 
       document.getElementById("topping-select-modal").classList.remove("hidden");
+    }
+
+    function incrementToppingQty(elementId, maxStock) {
+      const input = document.getElementById(elementId);
+      const current = parseInt(input.value) || 0;
+      if (current < maxStock) {
+        input.value = current + 1;
+      }
+    }
+
+    function decrementToppingQty(elementId) {
+      const input = document.getElementById(elementId);
+      const current = parseInt(input.value) || 0;
+      if (current > 0) {
+        input.value = current - 1;
+      }
+    }
+
+    function validateToppingQty(elementId, maxStock) {
+      const input = document.getElementById(elementId);
+      let value = parseInt(input.value) || 0;
+      if (value < 0) value = 0;
+      if (value > maxStock) value = maxStock;
+      input.value = value;
     }
 
     function closeToppingSelectModal() {
@@ -2252,23 +2317,37 @@ const firebaseConfig = {
     }
 
     function confirmToppingSelection() {
-      const productId = document.getElementById("topping-select-product-id").value;
-      const selectedCheckboxes = document.querySelectorAll('input[name="topping-select-checkbox"]:checked');
+      try {
+        const productId = document.getElementById("topping-select-product-id").value;
+        
+        // Collect toppings with quantity > 0
+        const selectedToppings = [];
+        document.querySelectorAll('[id^="topping-qty-"]').forEach(input => {
+          const qty = parseInt(input.value) || 0;
+          if (qty > 0) {
+            const toppingId = input.id.replace('topping-qty-', '');
+            const topping = appData.toppings.find(t => t.id === toppingId);
+            if (topping) {
+              // Add topping multiple times based on quantity
+              for (let i = 0; i < qty; i++) {
+                selectedToppings.push(topping);
+              }
+            }
+          }
+        });
 
-      if (selectedCheckboxes.length === 0) {
-        showToast("Silakan pilih minimal satu toping terlebih dahulu.", "warning");
-        return;
+        if (selectedToppings.length === 0) {
+          showToast("Silakan pilih minimal satu toping terlebih dahulu.", "warning");
+          return;
+        }
+
+        const product = appData.products.find(p => p.id === productId);
+        if (!product) return;
+
+        addProductToCartInternal(product, selectedToppings);
+      } finally {
+        closeToppingSelectModal();
       }
-
-      const product = appData.products.find(p => p.id === productId);
-      if (!product) return;
-
-      const selectedToppings = Array.from(selectedCheckboxes)
-        .map(cb => appData.toppings.find(t => t.id === cb.value))
-        .filter(Boolean);
-
-      addProductToCartInternal(product, selectedToppings);
-      closeToppingSelectModal();
     }
 
     function setPaymentMethod(method) {
@@ -2373,12 +2452,25 @@ const firebaseConfig = {
 
           // Kurangi stok toping (jika item memakai toping) secara paralel di cloud
           for (let item of cart) {
-            if (!item.toppingIds || item.toppingIds.length === 0) continue;
-            for (let toppingId of item.toppingIds) {
-              const currentTopping = appData.toppings.find(t => t.id === toppingId);
-              if (currentTopping) {
-                const newToppingStock = Math.max(0, currentTopping.stock - item.qty);
-                await pRef.collection('toppings').doc(toppingId).update({ stock: newToppingStock });
+            // Support untuk toping dengan quantity
+            const toppingQtyMap = item.toppingQuantities || {};
+            if (Object.keys(toppingQtyMap).length > 0) {
+              for (let [toppingId, toppingQty] of Object.entries(toppingQtyMap)) {
+                const currentTopping = appData.toppings.find(t => t.id === toppingId);
+                if (currentTopping) {
+                  // Kurangi stok sebesar (item.qty * toppingQty)
+                  const newToppingStock = Math.max(0, currentTopping.stock - (item.qty * toppingQty));
+                  await pRef.collection('toppings').doc(toppingId).update({ stock: newToppingStock });
+                }
+              }
+            } else if (item.toppingIds && item.toppingIds.length > 0) {
+              // Backward compatibility untuk item lama (tanpa quantity info)
+              for (let toppingId of item.toppingIds) {
+                const currentTopping = appData.toppings.find(t => t.id === toppingId);
+                if (currentTopping) {
+                  const newToppingStock = Math.max(0, currentTopping.stock - item.qty);
+                  await pRef.collection('toppings').doc(toppingId).update({ stock: newToppingStock });
+                }
               }
             }
           }
@@ -2398,7 +2490,15 @@ const firebaseConfig = {
           const prod = appData.products.find(p => p.id === item.id);
           if (prod) prod.stock = Math.max(0, prod.stock - item.qty);
 
-          if (item.toppingIds && item.toppingIds.length > 0) {
+          // Support untuk toping dengan quantity
+          const toppingQtyMap = item.toppingQuantities || {};
+          if (Object.keys(toppingQtyMap).length > 0) {
+            for (let [toppingId, toppingQty] of Object.entries(toppingQtyMap)) {
+              const topping = appData.toppings.find(t => t.id === toppingId);
+              if (topping) topping.stock = Math.max(0, topping.stock - (item.qty * toppingQty));
+            }
+          } else if (item.toppingIds && item.toppingIds.length > 0) {
+            // Backward compatibility
             item.toppingIds.forEach(toppingId => {
               const topping = appData.toppings.find(t => t.id === toppingId);
               if (topping) topping.stock = Math.max(0, topping.stock - item.qty);
