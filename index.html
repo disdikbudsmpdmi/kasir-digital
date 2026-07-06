@@ -1237,17 +1237,45 @@ const firebaseConfig = {
               applyUserRoleUI();
               await loadFirebaseData();
               document.getElementById("login-screen").classList.add("hidden");
-            } else {
-              // user null ATAU sesi anonim milik kasir -> Cek session kasir tersimpan
-              const savedUser = sessionStorage.getItem("bakoelan_session");
-              if (savedUser) {
-                currentUser = JSON.parse(savedUser);
-                applyUserRoleUI();
+              return;
+            }
+
+            if (!user) {
+              // Belum ada sesi sama sekali (baik anonim maupun asli).
+              // Buat sesi anonim dulu supaya Firestore Security Rules (request.auth != null)
+              // mengizinkan aplikasi MEMBACA data akun (users/outlets/dll) SEBELUM proses login,
+              // karena tanpa ini daftar akun kasir/owner tidak akan termuat dan login akan selalu gagal.
+              try {
+                await authRef.signInAnonymously();
+                // onAuthStateChanged akan terpanggil ulang secara otomatis dengan sesi anonim di atas
+              } catch (err) {
+                console.error("Gagal membuat sesi anonim awal:", err);
+                showToast("Gagal terhubung ke server otentikasi. Periksa koneksi Anda.", "error");
+                // Tetap coba muat data & tampilkan layar login sebagai fallback
                 await loadFirebaseData();
-                document.getElementById("login-screen").classList.add("hidden");
-              } else {
-                document.getElementById("login-screen").classList.remove("hidden");
+                const savedFallback = sessionStorage.getItem("bakoelan_session");
+                if (savedFallback) {
+                  currentUser = JSON.parse(savedFallback);
+                  applyUserRoleUI();
+                  document.getElementById("login-screen").classList.add("hidden");
+                } else {
+                  document.getElementById("login-screen").classList.remove("hidden");
+                }
               }
+              return;
+            }
+
+            // Sesi anonim aktif -> muat data publik (produk, outlet, karyawan, daftar akun login) SEKARANG,
+            // sebelum memutuskan mau menampilkan layar login atau memulihkan sesi tersimpan.
+            await loadFirebaseData();
+
+            const savedUser = sessionStorage.getItem("bakoelan_session");
+            if (savedUser) {
+              currentUser = JSON.parse(savedUser);
+              applyUserRoleUI();
+              document.getElementById("login-screen").classList.add("hidden");
+            } else {
+              document.getElementById("login-screen").classList.remove("hidden");
             }
           });
         } catch (err) {
