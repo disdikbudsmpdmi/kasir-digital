@@ -536,6 +536,17 @@
               <span id="cart-subtotal" class="text-slate-800">Rp 0</span>
             </div>
             <div class="flex justify-between items-center">
+              <span>Diskon Member (%)</span>
+              <div class="relative w-32">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400 font-bold text-xs">%</span>
+                <input type="number" id="cart-discount-input" oninput="updateCartDiscount(this.value)" min="0" max="100" value="0" class="w-full pl-10 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-bold text-right bg-white" placeholder="0">
+              </div>
+            </div>
+            <div class="flex justify-between items-center">
+              <span>Diskon Toko (%)</span>
+              <span id="cart-global-discount-value" class="text-slate-800">0%</span>
+            </div>
+            <div class="flex justify-between items-center">
               <span id="cart-tax-label">Pajak (PB1 10%)</span>
               <span id="cart-tax" class="text-slate-800">Rp 0</span>
             </div>
@@ -592,9 +603,14 @@
     <section id="tab-produk" class="tab-content hidden space-y-6">
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
         <h3 class="text-xl font-bold text-slate-800">Manajemen Produk & Menu</h3>
-        <button onclick="openProductModal('add')" class="px-4 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl hover:bg-emerald-700 transition flex items-center gap-2 shadow-sm">
-          <i class="fa-solid fa-plus"></i> Tambah Menu Baru
-        </button>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="openProductModal('add')" class="px-4 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl hover:bg-emerald-700 transition flex items-center gap-2 shadow-sm">
+            <i class="fa-solid fa-plus"></i> Tambah Menu Baru
+          </button>
+          <button onclick="openCategoryModal('add')" class="px-4 py-2.5 bg-slate-800 text-white font-bold text-xs rounded-xl hover:bg-slate-900 transition flex items-center gap-2 shadow-sm">
+            <i class="fa-solid fa-tags"></i> Kelola Kategori
+          </button>
+        </div>
       </div>
 
       <!-- Product List Card Grid -->
@@ -824,6 +840,10 @@
                 <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Tarif Pajak PB1 (%)</label>
                 <input type="number" id="setting-store-tax" min="0" max="100" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" required placeholder="10">
               </div>
+              <div>
+                <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Diskon Semua Produk (%)</label>
+                <input type="number" id="setting-store-product-discount" min="0" max="100" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" placeholder="0">
+              </div>
             </div>
           </div>
           <button type="submit" class="px-5 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl hover:bg-emerald-700 transition flex items-center gap-2 shadow-sm">
@@ -873,14 +893,7 @@
           <div>
             <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Kategori</label>
             <select id="prod-category" onchange="handleProdCategoryChange()" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold bg-white" required>
-              <optgroup label="Dimsum">
-                <option value="DIMSUM PREMIUM">DIMSUM PREMIUM</option>
-                <option value="DIMSUM MINI">DIMSUM MINI</option>
-              </optgroup>
-              <optgroup label="Lainnya">
-                <option value="Makanan">Makanan</option>
-                <option value="Minuman">Minuman</option>
-              </optgroup>
+              <option value="" disabled selected>Pilih kategori...</option>
             </select>
           </div>
           <div>
@@ -929,6 +942,37 @@
           <button type="submit" class="px-5 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl">Simpan</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: KELOLA KATEGORI PRODUK -->
+  <div id="category-modal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 max-w-xl w-full shadow-2xl relative">
+      <h4 class="text-lg font-bold text-slate-800 mb-4" id="category-modal-title">Kelola Kategori Produk</h4>
+      <form id="category-form" class="space-y-4">
+        <input type="hidden" id="category-id">
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Nama Kategori</label>
+          <input type="text" id="category-name" placeholder="Contoh: Dimsum Spesial" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" required>
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" onclick="closeCategoryModal()" class="px-4 py-2 text-slate-500 hover:text-slate-700 text-xs font-bold">Batal</button>
+          <button type="submit" class="px-5 py-2.5 bg-slate-800 text-white font-bold text-xs rounded-xl">Simpan Kategori</button>
+        </div>
+      </form>
+      <div class="mt-6 overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 text-slate-400 text-xs font-bold uppercase tracking-wider border-b border-slate-100">
+              <th class="py-3 px-4">Kategori</th>
+              <th class="py-3 px-4 text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="category-table-body" class="divide-y divide-slate-100 text-sm font-semibold">
+            <!-- Dynamic kategori rows -->
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -1118,6 +1162,10 @@
             <span id="receipt-subtotal">Rp 0</span>
           </div>
           <div class="flex justify-between">
+            <span>Diskon</span>
+            <span id="receipt-discount">Rp 0</span>
+          </div>
+          <div class="flex justify-between">
             <span id="receipt-tax-label">PB1 (10%)</span>
             <span id="receipt-tax">Rp 0</span>
           </div>
@@ -1241,6 +1289,7 @@ const firebaseConfig = {
     // In-Memory Data Store (Used both in PREVIEW Mode & as local cache for Firebase)
     let appData = {
       products: [],
+      categories: [],
       toppings: [],
       transactions: [],
       outlets: [],
@@ -1251,7 +1300,8 @@ const firebaseConfig = {
         phone: "081234567890",
         address: "Jl. Merdeka Raya Utama No. 42, Cabang Jakarta",
         footerText: "Terima Kasih atas Kunjungan Anda!",
-        taxRate: 10
+        taxRate: 10,
+        productDiscountRate: 0
       }
     };
 
@@ -1262,6 +1312,7 @@ const firebaseConfig = {
 
     // POS Active State
     let cart = [];
+    let cartDiscount = 0;
     let activeCategory = 'all';
     let selectedPaymentMethod = 'Tunai';
 
@@ -1536,6 +1587,12 @@ const firebaseConfig = {
 
       // 2. Daftar Menu Dimsum & Minuman
       appData.products = [];
+      appData.categories = [
+        { id: 'CAT-DIMSUM-PREMIUM', name: 'DIMSUM PREMIUM' },
+        { id: 'CAT-DIMSUM-MINI', name: 'DIMSUM MINI' },
+        { id: 'CAT-MAKANAN', name: 'Makanan' },
+        { id: 'CAT-MINUMAN', name: 'Minuman' }
+      ];
 
       // 2b. Daftar Toping & Stoknya
       appData.toppings = [];
@@ -1562,6 +1619,10 @@ const firebaseConfig = {
         // Ambil data produk
         const prodSnap = await pRef.collection('products').get();
         appData.products = prodSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Ambil daftar kategori produk
+        const catSnap = await pRef.collection('categories').get();
+        appData.categories = catSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
         // Ambil data toping
         const topSnap = await pRef.collection('toppings').get();
@@ -1616,6 +1677,10 @@ const firebaseConfig = {
       for (let item of appData.products) {
         await pRef.collection('products').doc(item.id).set(item);
       }
+      // Upload categories
+      for (let item of appData.categories) {
+        await pRef.collection('categories').doc(item.id).set(item);
+      }
       // Upload toppings
       for (let item of appData.toppings) {
         await pRef.collection('toppings').doc(item.id).set(item);
@@ -1646,7 +1711,8 @@ const firebaseConfig = {
       const cache = localStorage.getItem(`bakoelan_cache_${appId}`);
       if (cache) {
         appData = JSON.parse(cache);
-        // Jaga kompatibilitas dengan cache lama yang belum memiliki data toping
+        // Jaga kompatibilitas dengan cache lama yang belum memiliki data kategori atau toping
+        if (!Array.isArray(appData.categories)) appData.categories = [];
         if (!Array.isArray(appData.toppings)) appData.toppings = [];
       }
     }
@@ -2210,6 +2276,9 @@ const firebaseConfig = {
             <p class="text-xs font-medium">Keranjang belanja masih kosong.</p>
           </div>
         `;
+        cartDiscount = 0;
+        const discountInput = document.getElementById("cart-discount-input");
+        if (discountInput) discountInput.value = 0;
         document.getElementById("cart-subtotal").innerText = "Rp 0";
         document.getElementById("cart-tax").innerText = "Rp 0";
         document.getElementById("cart-tax-label").innerText = `Pajak (PB1 ${appData.settings.taxRate || 10}%)`;
@@ -2239,9 +2308,20 @@ const firebaseConfig = {
         `;
       });
 
+      const globalDiscountPercent = Math.min(100, Math.max(0, appData.settings.productDiscountRate || 0));
+      const manualDiscountPercent = Math.min(100 - globalDiscountPercent, Math.max(0, cartDiscount));
+      const totalDiscountPercent = Math.min(100, globalDiscountPercent + manualDiscountPercent);
+      const discount = Math.round(subtotal * (totalDiscountPercent / 100));
       const taxRate = typeof appData.settings.taxRate !== 'undefined' ? parseFloat(appData.settings.taxRate) : 10;
-      const tax = Math.round(subtotal * (taxRate / 100));
-      const total = subtotal + tax;
+      const taxableAmount = Math.max(0, subtotal - discount);
+      const tax = Math.round(taxableAmount * (taxRate / 100));
+      const total = taxableAmount + tax;
+
+      const discountInput = document.getElementById("cart-discount-input");
+      if (discountInput) discountInput.value = manualDiscountPercent;
+
+      const globalDiscountLabel = document.getElementById("cart-global-discount-value");
+      if (globalDiscountLabel) globalDiscountLabel.innerText = `${globalDiscountPercent}%`;
 
       document.getElementById("cart-subtotal").innerText = formatRupiah(subtotal);
       document.getElementById("cart-tax").innerText = formatRupiah(tax);
@@ -2384,10 +2464,20 @@ const firebaseConfig = {
       calculateChange();
     }
 
+    function updateCartDiscount(value) {
+      cartDiscount = Math.min(100, Math.max(0, parseFloat(value) || 0));
+      renderCart();
+    }
+
     function calculateChange() {
       const subtotal = cart.reduce((acc, curr) => acc + (curr.price * curr.qty), 0);
+      const globalDiscountPercent = Math.min(100, Math.max(0, appData.settings.productDiscountRate || 0));
+      const manualDiscountPercent = Math.min(100 - globalDiscountPercent, Math.max(0, cartDiscount));
+      const totalDiscountPercent = Math.min(100, globalDiscountPercent + manualDiscountPercent);
+      const discount = Math.round(subtotal * (totalDiscountPercent / 100));
       const taxRate = typeof appData.settings.taxRate !== 'undefined' ? parseFloat(appData.settings.taxRate) : 10;
-      const total = subtotal + Math.round(subtotal * (taxRate / 100));
+      const taxableAmount = Math.max(0, subtotal - discount);
+      const total = taxableAmount + Math.round(taxableAmount * (taxRate / 100));
       const receivedInput = document.getElementById("cash-received-input").value;
       const received = parseFloat(receivedInput) || 0;
 
@@ -2403,9 +2493,14 @@ const firebaseConfig = {
       }
 
       const subtotal = cart.reduce((acc, curr) => acc + (curr.price * curr.qty), 0);
+      const globalDiscountPercent = Math.min(100, Math.max(0, appData.settings.productDiscountRate || 0));
+      const manualDiscountPercent = Math.min(100 - globalDiscountPercent, Math.max(0, cartDiscount));
+      const totalDiscountPercent = Math.min(100, globalDiscountPercent + manualDiscountPercent);
+      const discountAmount = Math.round(subtotal * (totalDiscountPercent / 100));
       const taxRate = typeof appData.settings.taxRate !== 'undefined' ? parseFloat(appData.settings.taxRate) : 10;
-      const tax = Math.round(subtotal * (taxRate / 100));
-      const total = subtotal + tax;
+      const taxableAmount = Math.max(0, subtotal - discountAmount);
+      const tax = Math.round(taxableAmount * (taxRate / 100));
+      const total = taxableAmount + tax;
       const cashReceived = selectedPaymentMethod === 'Tunai' 
         ? (parseFloat(document.getElementById("cash-received-input").value) || 0)
         : total;
@@ -2427,6 +2522,8 @@ const firebaseConfig = {
         cashierName: currentUser.name,
         items: [...cart],
         subtotal: subtotal,
+        discountPercent: totalDiscountPercent,
+        discountAmount: discountAmount,
         tax: tax,
         taxRate: taxRate,
         total: total,
@@ -2557,6 +2654,9 @@ const firebaseConfig = {
       }
 
       document.getElementById("receipt-subtotal").innerText = formatRupiah(trx.subtotal);
+      const discountAmount = trx.discountAmount || 0;
+      const discountPercent = typeof trx.discountPercent !== 'undefined' ? trx.discountPercent : 0;
+      document.getElementById("receipt-discount").innerText = `${formatRupiah(discountAmount)} (${discountPercent}%)`;
       
       const receiptTax = document.getElementById("receipt-tax");
       if (receiptTax) {
@@ -2720,13 +2820,13 @@ const firebaseConfig = {
         prodOutletSelect.innerHTML += `<option value="${out.id}">${out.name}</option>`;
       });
 
+      renderProductCategorySelect();
       if (mode === 'add') {
         document.getElementById("product-modal-title").innerText = "Tambah Menu Baru";
         document.getElementById("product-id").value = "";
         document.getElementById("prod-image-url").value = "";
         document.getElementById("prod-subcategory").value = "";
         document.getElementById("prod-requires-topping").checked = false;
-        document.getElementById("prod-category").value = "DIMSUM PREMIUM";
         prodOutletSelect.value = "all";
       } else {
         document.getElementById("product-modal-title").innerText = "Edit Menu Detail";
@@ -2746,6 +2846,155 @@ const firebaseConfig = {
       handleProdCategoryChange();
       document.getElementById("product-modal").classList.remove("hidden");
       previewProductImage();
+    }
+
+    function getDefaultCategories() {
+      return [
+        { id: 'CAT-DIMSUM-PREMIUM', name: 'DIMSUM PREMIUM' },
+        { id: 'CAT-DIMSUM-MINI', name: 'DIMSUM MINI' },
+        { id: 'CAT-MAKANAN', name: 'Makanan' },
+        { id: 'CAT-MINUMAN', name: 'Minuman' }
+      ];
+    }
+
+    function ensureCategoriesLoaded() {
+      if (!Array.isArray(appData.categories) || appData.categories.length === 0) {
+        appData.categories = getDefaultCategories();
+      }
+    }
+
+    function renderProductCategorySelect(selectedCategory = '') {
+      ensureCategoriesLoaded();
+      const select = document.getElementById("prod-category");
+      if (!select) return;
+      select.innerHTML = `<option value="" disabled ${selectedCategory ? '' : 'selected'}>Pilih kategori...</option>`;
+      appData.categories.forEach(cat => {
+        select.innerHTML += `<option value="${cat.name}" ${cat.name === selectedCategory ? 'selected' : ''}>${cat.name}</option>`;
+      });
+      if (!selectedCategory && appData.categories.length > 0) {
+        select.value = appData.categories[0].name;
+      }
+    }
+
+    function openCategoryModal(mode, id = null) {
+      const form = document.getElementById("category-form");
+      form.reset();
+      document.getElementById("category-id").value = "";
+
+      if (mode === 'add') {
+        document.getElementById("category-modal-title").innerText = "Tambah Kategori Produk";
+      } else {
+        document.getElementById("category-modal-title").innerText = "Edit Kategori Produk";
+        const category = appData.categories.find(c => c.id === id);
+        if (category) {
+          document.getElementById("category-id").value = category.id;
+          document.getElementById("category-name").value = category.name;
+        }
+      }
+
+      renderCategoryTable();
+      document.getElementById("category-modal").classList.remove("hidden");
+    }
+
+    function closeCategoryModal() {
+      document.getElementById("category-modal").classList.add("hidden");
+    }
+
+    function renderCategoryTable() {
+      ensureCategoriesLoaded();
+      const tbody = document.getElementById("category-table-body");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+
+      if (appData.categories.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="2" class="py-8 text-center text-slate-400 text-xs">Belum ada kategori. Tambahkan kategori baru di atas.</td></tr>`;
+        return;
+      }
+
+      appData.categories.forEach(category => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+            <td class="py-3 px-4 text-slate-700">${category.name}</td>
+            <td class="py-3 px-4 text-right">
+              <button onclick="openCategoryModal('edit', '${category.id}')" class="text-blue-500 hover:text-blue-600 text-sm mr-3"><i class="fa-solid fa-pen-to-square"></i></button>
+              <button onclick="deleteCategory('${category.id}')" class="text-red-500 hover:text-red-600 text-sm"><i class="fa-solid fa-trash-can"></i></button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    document.getElementById("category-form").addEventListener("submit", async function(e) {
+      e.preventDefault();
+      const id = document.getElementById("category-id").value;
+      const name = document.getElementById("category-name").value.trim();
+      if (!name) {
+        showToast("Nama kategori tidak boleh kosong.", "error");
+        return;
+      }
+
+      const payload = { name };
+
+      if (!IS_PREVIEW && dbRef) {
+        try {
+          document.getElementById("loader").classList.remove("opacity-0", "pointer-events-none");
+          const catRef = dbRef.collection('artifacts').doc(appId).collection('public').doc('data').collection('categories');
+          const categoryId = id || `CAT-${Date.now().toString().slice(-6)}`;
+          await catRef.doc(categoryId).set({ id: categoryId, ...payload });
+          await loadFirebaseData();
+        } catch (err) {
+          showToast(err.message, "error");
+        } finally {
+          document.getElementById("loader").classList.add("opacity-0", "pointer-events-none");
+        }
+      } else {
+        if (id) {
+          const index = appData.categories.findIndex(c => c.id === id);
+          if (index !== -1) {
+            appData.categories[index] = { ...appData.categories[index], ...payload };
+          }
+        } else {
+          const newId = `CAT-${Date.now().toString().slice(-6)}`;
+          appData.categories.push({ id: newId, ...payload });
+        }
+        saveToLocalCache();
+      }
+
+      renderProductCategorySelect(name);
+      renderCategoryTable();
+      showToast(`Kategori ${id ? 'diperbarui' : 'ditambahkan'} berhasil.`);
+      closeCategoryModal();
+    });
+
+    function deleteCategory(id) {
+      const category = appData.categories.find(c => c.id === id);
+      if (!category) return;
+      const usedProducts = appData.products.filter(p => p.category === category.name);
+      if (usedProducts.length > 0) {
+        showToast(`Kategori '${category.name}' tidak bisa dihapus karena masih dipakai oleh ${usedProducts.length} produk.`, "error");
+        return;
+      }
+
+      showConfirm("Hapus Kategori", `Apakah Anda yakin ingin menghapus kategori '${category.name}'?`, async () => {
+        if (!IS_PREVIEW && dbRef) {
+          try {
+            document.getElementById("loader").classList.remove("opacity-0", "pointer-events-none");
+            await dbRef.collection('artifacts').doc(appId).collection('public').doc('data').collection('categories').doc(id).delete();
+            await loadFirebaseData();
+          } catch (err) {
+            showToast(err.message, "error");
+          } finally {
+            document.getElementById("loader").classList.add("opacity-0", "pointer-events-none");
+          }
+        } else {
+          appData.categories = appData.categories.filter(c => c.id !== id);
+          saveToLocalCache();
+        }
+
+        renderProductCategorySelect();
+        renderCategoryTable();
+        showToast("Kategori telah dihapus.");
+      });
     }
 
     // Tampilkan/sembunyikan field sub kategori sesuai kategori dimsum yang dipilih
@@ -3834,6 +4083,7 @@ const firebaseConfig = {
       document.getElementById("setting-store-address").value = settings.address || "";
       document.getElementById("setting-store-footer").value = settings.footerText || "";
       document.getElementById("setting-store-tax").value = typeof settings.taxRate !== 'undefined' ? settings.taxRate : 10;
+      document.getElementById("setting-store-product-discount").value = typeof settings.productDiscountRate !== 'undefined' ? settings.productDiscountRate : 0;
     }
 
     document.getElementById("settings-form").addEventListener("submit", async function(e) {
@@ -3844,16 +4094,19 @@ const firebaseConfig = {
         phone: document.getElementById("setting-store-phone").value.trim(),
         address: document.getElementById("setting-store-address").value.trim(),
         footerText: document.getElementById("setting-store-footer").value.trim(),
-        taxRate: parseInt(document.getElementById("setting-store-tax").value) || 0
+        taxRate: Math.min(100, Math.max(0, parseFloat(document.getElementById("setting-store-tax").value) || 0)),
+        productDiscountRate: Math.min(100, Math.max(0, parseFloat(document.getElementById("setting-store-product-discount").value) || 0))
       };
 
       if (!IS_PREVIEW && dbRef) {
         try {
           document.getElementById("loader").classList.remove("opacity-0", "pointer-events-none");
           await dbRef.collection('artifacts').doc(appId).collection('public').doc('data').collection('settings').doc('config').set(payload);
+          appData.settings = payload;
           await loadFirebaseData();
         } catch (err) {
           showToast(err.message, "error");
+          return;
         } finally {
           document.getElementById("loader").classList.add("opacity-0", "pointer-events-none");
         }
@@ -3862,6 +4115,8 @@ const firebaseConfig = {
         saveToLocalCache();
       }
 
+      loadSettings();
+      renderCart();
       showToast("Pengaturan struk & toko berhasil disimpan!");
     });
 
