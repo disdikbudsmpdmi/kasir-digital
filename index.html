@@ -2732,7 +2732,7 @@ const firebaseConfig = {
     // Install: https://play.google.com/store/apps/details?id=ru.a402d.rawbtprinter
 
     const RAWBT_PACKAGE = "ru.a402d.rawbtprinter";
-    const RECEIPT_CHAR_WIDTH = 32; // Lebar karakter standar utk kertas thermal 58mm (font normal)
+    const RECEIPT_CHAR_WIDTH = 42; // Lebar karakter utk kertas thermal 58mm dgn Font B (lebih kecil & rapi)
 
     // Susun data struk menjadi rangkaian byte ESC/POS mentah agar hasil cetak rapi (bold, rata tengah, dsb)
     function buildEscPosReceipt(trx) {
@@ -2742,14 +2742,17 @@ const firebaseConfig = {
       const ESC = 0x1B, GS = 0x1D;
       const push = (...arr) => bytes.push(...arr);
 
-      // Konversi teks ke byte. Karakter beraksen umum ditransliterasi, sisanya di luar ASCII diganti "?"
+      // Konversi teks ke byte. Spasi khusus (nbsp dll) dinormalisasi ke spasi biasa,
+      // karakter beraksen umum ditransliterasi, sisanya di luar ASCII diganti spasi (bukan "?")
       const accentMap = { 'é':'e','è':'e','ê':'e','à':'a','á':'a','â':'a','ü':'u','ú':'u','ö':'o','ó':'o','ñ':'n','ç':'c' };
       const textToBytes = (str) => {
         const out = [];
-        for (const ch of String(str)) {
+        // Normalisasi semua jenis spasi unicode (nbsp, thin space, dst) ke spasi biasa
+        const normalized = String(str).replace(/[\u00A0\u2000-\u200B\u202F\u2060]/g, " ");
+        for (const ch of normalized) {
           const mapped = accentMap[ch] || accentMap[ch.toLowerCase()] || ch;
           const code = mapped.charCodeAt(0);
-          out.push(code > 127 ? 63 : code); // 63 = '?'
+          out.push(code > 127 ? 32 : code); // 32 = spasi, dipakai sbg pengganti karakter tak dikenal
         }
         return out;
       };
@@ -2757,6 +2760,7 @@ const firebaseConfig = {
       const writeText = (str) => push(...textToBytes(str));
       const writeLine = (str = "") => { writeText(str); push(0x0A); };
       const initPrinter = () => push(ESC, 0x40);
+      const setFont = (small) => push(ESC, 0x4D, small ? 0x01 : 0x00); // ESC M: 0=Font A (besar), 1=Font B (kecil)
       const setAlign = (a) => push(ESC, 0x61, a); // 0 kiri, 1 tengah, 2 kanan
       const setBold = (on) => push(ESC, 0x45, on ? 1 : 0);
       const setDouble = (on) => push(GS, 0x21, on ? 0x11 : 0x00);
@@ -2794,6 +2798,7 @@ const firebaseConfig = {
 
       // ===== SUSUN ISI STRUK =====
       initPrinter();
+      setFont(true); // Gunakan Font B (lebih kecil & rapi) utk seluruh struk
       setAlign(1);
       setBold(true);
       setDouble(true);
