@@ -280,8 +280,9 @@
         <i class="fa-solid fa-bowl-food text-lg w-6"></i>Produk / Menu
       </button>
 
-      <button onclick="switchTab('stok')" data-tab="stok" class="sidebar-tab-btn flex items-center gap-3.5 w-full px-4 py-3 rounded-2xl font-semibold text-sm transition text-slate-500 hover:text-slate-800 hover:bg-slate-100 owner-only">
+      <button onclick="switchTab('stok')" data-tab="stok" class="sidebar-tab-btn flex items-center gap-3.5 w-full px-4 py-3 rounded-2xl font-semibold text-sm transition text-slate-500 hover:text-slate-800 hover:bg-slate-100">
         <i class="fa-solid fa-boxes-stacked text-lg w-6"></i>Stok Varian
+        <span id="stok-notif-badge-desktop" class="hidden ml-auto w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" title="Ada stok Varian menipis"></span>
       </button>
 
       <button onclick="switchTab('outlet')" data-tab="outlet" class="sidebar-tab-btn flex items-center gap-3.5 w-full px-4 py-3 rounded-2xl font-semibold text-sm transition text-slate-500 hover:text-slate-800 hover:bg-slate-100 owner-only">
@@ -352,8 +353,11 @@
         <div class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center"><i class="fa-solid fa-bowl-food text-base"></i></div>
         <span class="text-xs font-bold text-slate-700">Produk / Menu</span>
       </button>
-      <button onclick="switchTabMobile('stok')" class="owner-only flex flex-col items-center gap-2.5 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-emerald-500/20 active:scale-95 transition">
-        <div class="w-10 h-10 bg-teal-50 text-teal-600 rounded-xl flex items-center justify-center"><i class="fa-solid fa-boxes-stacked text-base"></i></div>
+      <button onclick="switchTabMobile('stok')" class="flex flex-col items-center gap-2.5 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-emerald-500/20 active:scale-95 transition">
+        <div class="relative w-10 h-10 bg-teal-50 text-teal-600 rounded-xl flex items-center justify-center">
+          <i class="fa-solid fa-boxes-stacked text-base"></i>
+          <span id="stok-notif-badge-mobile" class="hidden absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse" title="Ada stok Varian menipis"></span>
+        </div>
         <span class="text-xs font-bold text-slate-700">Stok Varian</span>
       </button>
       <button onclick="switchTabMobile('outlet')" class="owner-only flex flex-col items-center gap-2.5 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-emerald-500/20 active:scale-95 transition">
@@ -587,7 +591,7 @@
                 <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Uang Diterima (Bayar)</label>
                 <div class="relative">
                   <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400 font-bold text-xs">Rp</span>
-                  <input type="number" id="cash-received-input" oninput="calculateChange()" class="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-bold text-right" placeholder="0">
+                  <input type="text" inputmode="numeric" id="cash-received-input" oninput="formatCashInput(this)" class="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-bold text-right" placeholder="0">
                 </div>
               </div>
               <div class="flex justify-between text-xs font-bold text-slate-500">
@@ -671,12 +675,18 @@
         <div class="px-6 py-4 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
           <div>
             <h4 class="font-extrabold text-slate-800 text-sm"><i class="fa-solid fa-pepper-hot text-emerald-600 mr-1.5"></i>Stok Varian</h4>
-            <p class="text-[11px] text-slate-400 font-semibold mt-0.5">Varian ini akan muncul sebagai pilihan di POS untuk menu dimsum yang wajib memilih Varian.</p>
+            <p id="topping-scope-desc" class="text-[11px] text-slate-400 font-semibold mt-0.5">Varian ini akan muncul sebagai pilihan di POS untuk menu dimsum yang wajib memilih Varian.</p>
           </div>
           <button onclick="openToppingModal('add')" class="px-4 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl hover:bg-emerald-700 transition flex items-center gap-2 shadow-sm shrink-0">
             <i class="fa-solid fa-plus"></i> Tambah Varian
           </button>
         </div>
+
+        <!-- Filter Pill Outlet (khusus Owner, untuk melihat rekap per/semua outlet) -->
+        <div id="topping-outlet-pills" class="owner-only px-6 pt-4 flex flex-wrap gap-2">
+          <!-- Dynamic pills: Semua Outlet, Outlet A, Outlet B, dst -->
+        </div>
+
         <div class="px-6 py-3 border-b border-slate-100">
           <div class="relative w-full md:max-w-xs">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
@@ -690,7 +700,9 @@
             <thead>
               <tr class="bg-slate-50 text-slate-400 text-xs font-bold uppercase tracking-wider border-b border-slate-100">
                 <th class="py-3 px-6">Nama Varian</th>
+                <th class="py-3 px-6 owner-only">Outlet</th>
                 <th class="py-3 px-6 text-center">Stok</th>
+                <th class="py-3 px-6 text-center">Status</th>
                 <th class="py-3 px-6 text-right">Aksi</th>
               </tr>
             </thead>
@@ -1021,6 +1033,15 @@
           <input type="text" id="top-name" placeholder="Contoh: Sambal Matah, Saos Telur Asin, Mayo" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" required>
         </div>
         <div>
+          <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Outlet</label>
+          <!-- Owner: bebas pilih outlet tujuan Varian ini -->
+          <select id="top-outlet" class="owner-only w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold bg-white" required>
+            <!-- Dynamic list of outlets -->
+          </select>
+          <!-- Kasir: outlet terkunci otomatis ke outlet tugasnya, ditampilkan sebagai teks saja -->
+          <div id="top-outlet-locked-label" class="hidden w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-500">-</div>
+        </div>
+        <div>
           <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Stok Varian</label>
           <input type="number" id="top-stock" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" required>
         </div>
@@ -1307,6 +1328,8 @@ const firebaseConfig = {
     let authRef = null;
     let currentUser = { uid: "guest-owner", name: "Owner Preview", role: "owner", outletId: "all" };
     let globalActiveOutlet = "all";
+    // Filter pill outlet khusus tab "Stok Varian" (independen dari filter outlet global di top bar)
+    let stockOutletFilter = "all";
     
     // In-Memory Data Store (Used both in PREVIEW Mode & as local cache for Firebase)
     let appData = {
@@ -1375,6 +1398,47 @@ const firebaseConfig = {
         toast.classList.add("translate-y-2", "opacity-0");
         setTimeout(() => toast.remove(), 300);
       }, 4000);
+    }
+
+    // ================= NOTIFIKASI STOK VARIAN MENIPIS (< 10 pcs) =================
+    // Kasir: hanya dicek untuk Varian di outletnya sendiri.
+    // Owner: dicek untuk SEMUA outlet, dikelompokkan per outlet jika lebih dari satu menipis.
+    // `showToastNotif`=false dipakai untuk sekadar memperbarui badge tanpa memunculkan toast (hindari spam).
+    function checkLowStockToppings(showToastNotif = false) {
+      if (!Array.isArray(appData.toppings)) return;
+
+      const isKasir = currentUser && currentUser.role === 'kasir';
+      const relevantToppings = isKasir
+        ? appData.toppings.filter(t => t.outletId === currentUser.outletId)
+        : appData.toppings;
+
+      const lowStockItems = relevantToppings.filter(t => (t.stock || 0) < 10);
+
+      // Update badge merah di sidebar (desktop & mobile)
+      const badgeDesktop = document.getElementById("stok-notif-badge-desktop");
+      const badgeMobile = document.getElementById("stok-notif-badge-mobile");
+      [badgeDesktop, badgeMobile].forEach(badge => {
+        if (!badge) return;
+        badge.classList.toggle("hidden", lowStockItems.length === 0);
+      });
+
+      if (!showToastNotif || lowStockItems.length === 0) return;
+
+      if (isKasir) {
+        const names = lowStockItems.map(t => `${t.name} (sisa ${t.stock})`).join(', ');
+        showToast(`Stok Varian menipis: ${names}`, "warning");
+      } else {
+        // Kelompokkan per outlet untuk owner
+        const grouped = {};
+        lowStockItems.forEach(t => {
+          const outletName = (appData.outlets.find(o => o.id === t.outletId) || {}).name || 'Belum Ditugaskan';
+          if (!grouped[outletName]) grouped[outletName] = [];
+          grouped[outletName].push(`${t.name} (sisa ${t.stock})`);
+        });
+        Object.entries(grouped).forEach(([outletName, items]) => {
+          showToast(`Outlet ${outletName}: stok menipis - ${items.join(', ')}`, "warning");
+        });
+      }
     }
 
     // Modal Dialog custom pengganti alert() / confirm()
@@ -1600,6 +1664,9 @@ const firebaseConfig = {
         // Owner bebas memilih outlet manapun, termasuk "Semua Outlet"
         updateGlobalOutletFilterOptions();
       }
+
+      // Perbarui badge notifikasi stok Varian menipis sesuai lingkup peran yang baru login
+      checkLowStockToppings(false);
     }
 
 
@@ -1678,11 +1745,63 @@ const firebaseConfig = {
           await executeCloudAutoSetup();
         }
 
+        // Migrasi otomatis Varian lama (tanpa outletId) ke setiap outlet yang ada
+        await migrateToppingsWithoutOutlet();
+
         updateUISelectMenus();
+        checkLowStockToppings(false);
       } catch (err) {
         console.error("Gagal menarik data dari Firestore: ", err);
         showToast("Error sinkronisasi database, beralih ke Mode Cache Offline.", "error");
         loadFromLocalCache();
+      }
+    }
+
+    // ================= MIGRASI STOK VARIAN LAMA (GLOBAL) KE PER-OUTLET =================
+    // Varian versi lama disimpan tanpa outletId (stok tunggal dipakai bersama semua outlet).
+    // Fungsi ini menduplikasi tiap Varian lama tsb menjadi satu record per outlet yang ada,
+    // dengan stok awal = stok lama, lalu menandainya `needsStockVerification: true` supaya
+    // owner/kasir diingatkan untuk mengecek ulang jumlah stok riil di outlet masing-masing.
+    async function migrateToppingsWithoutOutlet() {
+      if (!Array.isArray(appData.toppings) || appData.toppings.length === 0) return;
+      if (!Array.isArray(appData.outlets) || appData.outlets.length === 0) return;
+
+      const legacyToppings = appData.toppings.filter(t => !t.outletId);
+      if (legacyToppings.length === 0) return;
+
+      const newRecords = [];
+      legacyToppings.forEach(legacy => {
+        appData.outlets.forEach((out, idx) => {
+          newRecords.push({
+            id: `${legacy.id}-${out.id}`,
+            name: legacy.name,
+            stock: legacy.stock || 0,
+            outletId: out.id,
+            needsStockVerification: true
+          });
+        });
+      });
+
+      // Buang record lama (tanpa outletId), gabungkan dengan hasil migrasi
+      appData.toppings = [
+        ...appData.toppings.filter(t => t.outletId),
+        ...newRecords
+      ];
+
+      if (!IS_PREVIEW && dbRef) {
+        try {
+          const pRef = dbRef.collection('artifacts').doc(appId).collection('public').doc('data').collection('toppings');
+          for (let legacy of legacyToppings) {
+            await pRef.doc(legacy.id).delete();
+          }
+          for (let item of newRecords) {
+            await pRef.doc(item.id).set(item);
+          }
+        } catch (err) {
+          console.error("Gagal migrasi Varian lama ke per-outlet:", err);
+        }
+      } else {
+        saveToLocalCache();
       }
     }
 
@@ -1737,6 +1856,8 @@ const firebaseConfig = {
         // Jaga kompatibilitas dengan cache lama yang belum memiliki data kategori atau Varian
         if (!Array.isArray(appData.categories)) appData.categories = [];
         if (!Array.isArray(appData.toppings)) appData.toppings = [];
+        migrateToppingsWithoutOutlet();
+        checkLowStockToppings(false);
       }
     }
 
@@ -2365,7 +2486,15 @@ const firebaseConfig = {
       const product = appData.products.find(p => p.id === productId);
       if (!product) return;
 
-      const availableToppings = appData.toppings.filter(t => t.stock > 0);
+      // Tentukan outlet aktif transaksi: Kasir selalu outletnya sendiri,
+      // Owner mengikuti filter outlet global di top bar (fallback ke outlet pertama jika "Semua Outlet").
+      let posOutletId = currentUser.role === 'kasir' ? currentUser.outletId : globalActiveOutlet;
+      if (!posOutletId || posOutletId === 'all') {
+        posOutletId = appData.outlets[0]?.id || null;
+      }
+
+      // Varian hanya diambil dari stok milik outlet transaksi yang sedang aktif
+      const availableToppings = appData.toppings.filter(t => t.stock > 0 && t.outletId === posOutletId);
 
       document.getElementById("topping-select-product-id").value = productId;
       document.getElementById("topping-select-product-name").innerText = product.name;
@@ -2507,8 +2636,27 @@ const firebaseConfig = {
     }
 
     function inputQuickCash(amount) {
-      document.getElementById("cash-received-input").value = amount;
+      document.getElementById("cash-received-input").value = amount.toLocaleString('id-ID');
       calculateChange();
+    }
+
+    // Format tampilan input "Uang Diterima" dengan pemisah ribuan (mis. 20.000) saat kasir mengetik,
+    // sambil tetap mempertahankan posisi kursor & hanya mengizinkan digit angka.
+    function formatCashInput(el) {
+      const cursorFromEnd = el.value.length - el.selectionStart;
+      const digitsOnly = el.value.replace(/\D/g, '');
+      el.value = digitsOnly === '' ? '' : parseInt(digitsOnly, 10).toLocaleString('id-ID');
+
+      const newPos = Math.max(0, el.value.length - cursorFromEnd);
+      el.setSelectionRange(newPos, newPos);
+
+      calculateChange();
+    }
+
+    // Ambil nilai murni (angka) dari input "Uang Diterima" yang sudah diformat dengan titik ribuan
+    function parseCashInputValue() {
+      const raw = document.getElementById("cash-received-input").value;
+      return parseInt(raw.replace(/\D/g, ''), 10) || 0;
     }
 
     function updateCartDiscount(value) {
@@ -2525,8 +2673,7 @@ const firebaseConfig = {
       const taxRate = typeof appData.settings.taxRate !== 'undefined' ? parseFloat(appData.settings.taxRate) : 10;
       const taxableAmount = Math.max(0, subtotal - discount);
       const total = taxableAmount + Math.round(taxableAmount * (taxRate / 100));
-      const receivedInput = document.getElementById("cash-received-input").value;
-      const received = parseFloat(receivedInput) || 0;
+      const received = parseCashInputValue();
 
       const change = Math.max(0, received - total);
       document.getElementById("cash-change-label").innerText = formatRupiah(change);
@@ -2549,7 +2696,7 @@ const firebaseConfig = {
       const tax = Math.round(taxableAmount * (taxRate / 100));
       const total = taxableAmount + tax;
       const cashReceived = selectedPaymentMethod === 'Tunai' 
-        ? (parseFloat(document.getElementById("cash-received-input").value) || 0)
+        ? parseCashInputValue()
         : total;
 
       if (selectedPaymentMethod === 'Tunai' && cashReceived < total) {
@@ -2656,6 +2803,9 @@ const firebaseConfig = {
       // Tampilkan struk termal virtual
       renderThermalReceipt(payload);
 
+      // Cek notifikasi stok Varian menipis (< 10 pcs) setelah stok berkurang akibat transaksi ini
+      checkLowStockToppings(true);
+
       // Reset Keranjang & Input
       cart = [];
       document.getElementById("cash-received-input").value = "";
@@ -2732,7 +2882,7 @@ const firebaseConfig = {
     // Install: https://play.google.com/store/apps/details?id=ru.a402d.rawbtprinter
 
     const RAWBT_PACKAGE = "ru.a402d.rawbtprinter";
-    const RECEIPT_CHAR_WIDTH = 42; // Lebar karakter utk kertas thermal 58mm dgn Font B (lebih kecil & rapi)
+    const RECEIPT_CHAR_WIDTH = 32; // Lebar karakter standar utk kertas thermal 58mm (font normal)
 
     // Susun data struk menjadi rangkaian byte ESC/POS mentah agar hasil cetak rapi (bold, rata tengah, dsb)
     function buildEscPosReceipt(trx) {
@@ -2742,17 +2892,14 @@ const firebaseConfig = {
       const ESC = 0x1B, GS = 0x1D;
       const push = (...arr) => bytes.push(...arr);
 
-      // Konversi teks ke byte. Spasi khusus (nbsp dll) dinormalisasi ke spasi biasa,
-      // karakter beraksen umum ditransliterasi, sisanya di luar ASCII diganti spasi (bukan "?")
+      // Konversi teks ke byte. Karakter beraksen umum ditransliterasi, sisanya di luar ASCII diganti "?"
       const accentMap = { 'é':'e','è':'e','ê':'e','à':'a','á':'a','â':'a','ü':'u','ú':'u','ö':'o','ó':'o','ñ':'n','ç':'c' };
       const textToBytes = (str) => {
         const out = [];
-        // Normalisasi semua jenis spasi unicode (nbsp, thin space, dst) ke spasi biasa
-        const normalized = String(str).replace(/[\u00A0\u2000-\u200B\u202F\u2060]/g, " ");
-        for (const ch of normalized) {
+        for (const ch of String(str)) {
           const mapped = accentMap[ch] || accentMap[ch.toLowerCase()] || ch;
           const code = mapped.charCodeAt(0);
-          out.push(code > 127 ? 32 : code); // 32 = spasi, dipakai sbg pengganti karakter tak dikenal
+          out.push(code > 127 ? 63 : code); // 63 = '?'
         }
         return out;
       };
@@ -2760,7 +2907,6 @@ const firebaseConfig = {
       const writeText = (str) => push(...textToBytes(str));
       const writeLine = (str = "") => { writeText(str); push(0x0A); };
       const initPrinter = () => push(ESC, 0x40);
-      const setFont = (small) => push(ESC, 0x4D, small ? 0x01 : 0x00); // ESC M: 0=Font A (besar), 1=Font B (kecil)
       const setAlign = (a) => push(ESC, 0x61, a); // 0 kiri, 1 tengah, 2 kanan
       const setBold = (on) => push(ESC, 0x45, on ? 1 : 0);
       const setDouble = (on) => push(GS, 0x21, on ? 0x11 : 0x00);
@@ -2798,7 +2944,6 @@ const firebaseConfig = {
 
       // ===== SUSUN ISI STRUK =====
       initPrinter();
-      setFont(true); // Gunakan Font B (lebih kecil & rapi) utk seluruh struk
       setAlign(1);
       setBold(true);
       setDouble(true);
@@ -3425,6 +3570,54 @@ const firebaseConfig = {
     // ================= TAB: STOK PRODUK & Varian =================
     function loadStockTab() {
       renderStockProductTable();
+      renderToppingOutletFilterPills();
+      renderToppingTable();
+      checkLowStockToppings(true);
+    }
+
+    // Render pill filter outlet untuk rekap Stok Varian (khusus Owner).
+    // Kasir tidak melihat pill ini sama sekali (dikunci ke outletnya via class owner-only).
+    function renderToppingOutletFilterPills() {
+      const container = document.getElementById("topping-outlet-pills");
+      const scopeDesc = document.getElementById("topping-scope-desc");
+      if (!container) return;
+
+      const isKasir = currentUser && currentUser.role === 'kasir';
+
+      if (isKasir) {
+        // Kasir hanya melihat stok Varian di outletnya sendiri
+        const myOutlet = appData.outlets.find(o => o.id === currentUser.outletId);
+        scopeDesc.innerText = `Menampilkan Varian di outlet Anda: ${myOutlet ? myOutlet.name : 'Outlet Saya'}. Varian ini akan muncul sebagai pilihan di POS.`;
+        return;
+      }
+
+      // Jika filter yang tersimpan mengacu pada outlet yang sudah tidak ada, kembalikan ke "all"
+      const validIds = ['all', ...appData.outlets.map(o => o.id)];
+      if (!validIds.includes(stockOutletFilter)) stockOutletFilter = 'all';
+
+      let pillsHtml = `
+        <button onclick="selectStockOutletFilter('all')" class="px-3.5 py-1.5 rounded-full text-xs font-bold transition ${stockOutletFilter === 'all' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}">
+          Semua Outlet
+        </button>
+      `;
+      appData.outlets.forEach(out => {
+        pillsHtml += `
+          <button onclick="selectStockOutletFilter('${out.id}')" class="px-3.5 py-1.5 rounded-full text-xs font-bold transition ${stockOutletFilter === out.id ? 'bg-emerald-600 text-white shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}">
+            ${out.name}
+          </button>
+        `;
+      });
+      container.innerHTML = pillsHtml;
+
+      scopeDesc.innerText = stockOutletFilter === 'all'
+        ? "Menampilkan rekap Varian dari SEMUA outlet, dikelompokkan per outlet."
+        : `Menampilkan Varian khusus outlet: ${(appData.outlets.find(o => o.id === stockOutletFilter) || {}).name || '-'}.`;
+    }
+
+    // Dipanggil saat Owner klik salah satu pill outlet di tab Stok Varian
+    function selectStockOutletFilter(outletId) {
+      stockOutletFilter = outletId;
+      renderToppingOutletFilterPills();
       renderToppingTable();
     }
 
@@ -3486,29 +3679,59 @@ const firebaseConfig = {
       if (!tbody) return;
       tbody.innerHTML = "";
 
+      const isKasir = currentUser && currentUser.role === 'kasir';
+      const colCount = isKasir ? 4 : 5; // Kolom Outlet hanya tampil untuk Owner
+
       if (!appData.toppings || appData.toppings.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" class="py-8 text-center text-slate-400 text-xs">Belum ada data Varian. Tambahkan Varian baru untuk digunakan di menu POS.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${colCount}" class="py-8 text-center text-slate-400 text-xs">Belum ada data Varian. Tambahkan Varian baru untuk digunakan di menu POS.</td></tr>`;
         return;
+      }
+
+      // Lingkup data: Kasir dikunci ke outletnya sendiri. Owner mengikuti pill filter (Semua/Outlet tertentu).
+      let scopedToppings = appData.toppings;
+      if (isKasir) {
+        scopedToppings = scopedToppings.filter(t => t.outletId === currentUser.outletId);
+      } else if (stockOutletFilter !== 'all') {
+        scopedToppings = scopedToppings.filter(t => t.outletId === stockOutletFilter);
       }
 
       // Filter berdasarkan kata kunci pencarian nama Varian
       const toppingSearchInput = document.getElementById("topping-search");
       const toppingSearchVal = toppingSearchInput ? toppingSearchInput.value.toLowerCase().trim() : '';
-      const searchedToppings = toppingSearchVal === '' ? appData.toppings : appData.toppings.filter(t => {
+      const searchedToppings = toppingSearchVal === '' ? scopedToppings : scopedToppings.filter(t => {
         return t.name && t.name.toLowerCase().includes(toppingSearchVal);
       });
 
       if (searchedToppings.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" class="py-8 text-center text-slate-400 text-xs">Tidak ada Varian yang cocok dengan pencarian "${toppingSearchInput ? toppingSearchInput.value : ''}".</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="${colCount}" class="py-8 text-center text-slate-400 text-xs">Tidak ada Varian yang cocok untuk lingkup/pencarian ini.</td></tr>`;
         return;
       }
 
-      searchedToppings.forEach(t => {
+      // Owner melihat mode rekap: urutkan berdasarkan nama outlet agar mudah dikelompokkan
+      const sorted = isKasir ? searchedToppings : [...searchedToppings].sort((a, b) => {
+        const outA = (appData.outlets.find(o => o.id === a.outletId) || {}).name || '';
+        const outB = (appData.outlets.find(o => o.id === b.outletId) || {}).name || '';
+        return outA.localeCompare(outB) || a.name.localeCompare(b.name);
+      });
+
+      sorted.forEach(t => {
+        const outletName = (appData.outlets.find(o => o.id === t.outletId) || {}).name || 'Belum Ditugaskan';
+        const isLow = t.stock < 10;
+
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50 transition border-b border-slate-100">
-            <td class="py-3 px-6 text-slate-800 font-bold">${t.name}</td>
+            <td class="py-3 px-6 text-slate-800 font-bold">
+              ${t.name}
+              ${t.needsStockVerification ? `<span class="ml-2 inline-block px-2 py-0.5 text-[9px] font-bold rounded-md bg-amber-100 text-amber-700 align-middle">Perlu Verifikasi Stok</span>` : ''}
+            </td>
+            <td class="py-3 px-6 text-slate-500 owner-only">${outletName}</td>
             <td class="py-3 px-6 text-center">
-              <span class="inline-block px-2.5 py-1 text-xs font-bold rounded-lg ${t.stock < 10 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-50'}">${t.stock}</span>
+              <span class="inline-block px-2.5 py-1 text-xs font-bold rounded-lg ${isLow ? 'bg-amber-100 text-amber-700' : 'bg-emerald-50'}">${t.stock}</span>
+            </td>
+            <td class="py-3 px-6 text-center">
+              <span class="inline-block px-2.5 py-1 text-[10px] font-bold rounded-lg ${isLow ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}">
+                <i class="fa-solid ${isLow ? 'fa-triangle-exclamation' : 'fa-circle-check'} mr-1"></i>${isLow ? 'Menipis' : 'Aman'}
+              </span>
             </td>
             <td class="py-3 px-6 text-right">
               <button onclick="adjustToppingStock('${t.id}', -1)" class="w-7 h-7 bg-white text-slate-600 rounded-lg inline-flex items-center justify-center border border-slate-200 hover:bg-slate-50 mr-1"><i class="fa-solid fa-minus text-[10px]"></i></button>
@@ -3524,12 +3747,19 @@ const firebaseConfig = {
     async function adjustToppingStock(id, delta) {
       const topping = appData.toppings.find(t => t.id === id);
       if (!topping) return;
+
+      // Kasir hanya boleh menyesuaikan stok Varian di outletnya sendiri
+      if (currentUser.role === 'kasir' && topping.outletId !== currentUser.outletId) {
+        showToast("Akses Ditolak: Varian ini bukan milik outlet Anda.", "error");
+        return;
+      }
+
       const newStock = Math.max(0, (topping.stock || 0) + delta);
 
       if (!IS_PREVIEW && dbRef) {
         try {
           const pRef = dbRef.collection('artifacts').doc(appId).collection('public').doc('data').collection('toppings');
-          await pRef.doc(id).update({ stock: newStock });
+          await pRef.doc(id).update({ stock: newStock, needsStockVerification: false });
           await loadFirebaseData();
         } catch (err) {
           showToast(err.message, "error");
@@ -3537,18 +3767,43 @@ const firebaseConfig = {
         }
       } else {
         topping.stock = newStock;
+        topping.needsStockVerification = false;
         saveToLocalCache();
       }
       renderToppingTable();
+      checkLowStockToppings(true);
     }
 
     function openToppingModal(mode, id = null) {
       const form = document.getElementById("topping-form");
       form.reset();
 
+      const isKasir = currentUser && currentUser.role === 'kasir';
+      const outletSelect = document.getElementById("top-outlet");
+      const outletLockedLabel = document.getElementById("top-outlet-locked-label");
+
+      if (isKasir) {
+        // Kasir tidak bisa memilih outlet: dikunci otomatis ke outlet tugasnya
+        outletSelect.classList.add("hidden");
+        outletSelect.required = false;
+        outletLockedLabel.classList.remove("hidden");
+        const myOutlet = appData.outlets.find(o => o.id === currentUser.outletId);
+        outletLockedLabel.innerText = myOutlet ? myOutlet.name : "Outlet Saya";
+      } else {
+        // Owner bebas memilih outlet tujuan Varian
+        outletSelect.classList.remove("hidden");
+        outletSelect.required = true;
+        outletLockedLabel.classList.add("hidden");
+        outletSelect.innerHTML = appData.outlets.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
+      }
+
       if (mode === 'add') {
         document.getElementById("topping-modal-title").innerText = "Tambah Varian Baru";
         document.getElementById("topping-id").value = "";
+        // Owner: default outlet mengikuti pill filter yang sedang aktif (jika spesifik)
+        if (!isKasir && stockOutletFilter !== 'all') {
+          outletSelect.value = stockOutletFilter;
+        }
       } else {
         document.getElementById("topping-modal-title").innerText = "Edit Varian";
         const t = appData.toppings.find(top => top.id === id);
@@ -3556,6 +3811,7 @@ const firebaseConfig = {
           document.getElementById("topping-id").value = t.id;
           document.getElementById("top-name").value = t.name;
           document.getElementById("top-stock").value = t.stock;
+          if (!isKasir) outletSelect.value = t.outletId || '';
         }
       }
       document.getElementById("topping-modal").classList.remove("hidden");
@@ -3568,10 +3824,31 @@ const firebaseConfig = {
     document.getElementById("topping-form").addEventListener("submit", async function(e) {
       e.preventDefault();
       const id = document.getElementById("topping-id").value;
+      const isKasir = currentUser && currentUser.role === 'kasir';
+
+      // Tentukan outletId: Kasir dipaksa ke outletnya sendiri (anti-manipulasi),
+      // Owner mengikuti pilihan dropdown outlet pada form.
+      const chosenOutletId = isKasir ? currentUser.outletId : document.getElementById("top-outlet").value;
+
+      if (!chosenOutletId) {
+        showToast("Silakan pilih outlet tujuan Varian ini terlebih dahulu.", "warning");
+        return;
+      }
+
+      // Jika sedang edit, pastikan kasir tidak mengedit Varian outlet lain (mis. via data lama di memori)
+      if (id && isKasir) {
+        const existing = appData.toppings.find(t => t.id === id);
+        if (existing && existing.outletId !== currentUser.outletId) {
+          showToast("Akses Ditolak: Varian ini bukan milik outlet Anda.", "error");
+          return;
+        }
+      }
 
       const payload = {
         name: document.getElementById("top-name").value.trim(),
-        stock: parseInt(document.getElementById("top-stock").value) || 0
+        stock: parseInt(document.getElementById("top-stock").value) || 0,
+        outletId: chosenOutletId,
+        needsStockVerification: false
       };
 
       if (!IS_PREVIEW && dbRef) {
@@ -3605,11 +3882,18 @@ const firebaseConfig = {
       }
 
       closeToppingModal();
+      renderToppingOutletFilterPills();
       renderToppingTable();
+      checkLowStockToppings(true);
       showToast("Data Varian berhasil disimpan.");
     });
 
     function deleteTopping(id) {
+      const topping = appData.toppings.find(t => t.id === id);
+      if (currentUser.role === 'kasir' && topping && topping.outletId !== currentUser.outletId) {
+        showToast("Akses Ditolak: Varian ini bukan milik outlet Anda.", "error");
+        return;
+      }
       showConfirm("Hapus Varian", "Apakah Anda yakin ingin menghapus Varian ini dari database?", async () => {
         if (!IS_PREVIEW && dbRef) {
           try {
@@ -4507,6 +4791,8 @@ const firebaseConfig = {
                 }
               } else {
                 saveToLocalCache();
+                await migrateToppingsWithoutOutlet();
+                checkLowStockToppings(false);
               }
 
               showToast("Database berhasil dipulihkan dari cadangan JSON!", "success");
