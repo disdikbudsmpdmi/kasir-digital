@@ -1203,10 +1203,6 @@
             <span>Diskon Member</span>
             <span id="receipt-discount">Rp 0</span>
           </div>
-          <div class="flex justify-between">
-            <span id="receipt-tax-label">PB1 (10%)</span>
-            <span id="receipt-tax">Rp 0</span>
-          </div>
           <div class="flex justify-between font-bold text-[12px]">
             <span>Total Akhir</span>
             <span id="receipt-total">Rp 0</span>
@@ -1465,7 +1461,7 @@ const firebaseConfig = {
         style: 'currency',
         currency: 'IDR',
         minimumFractionDigits: 0
-      }).format(amount).replace("IDR", "Rp").trim();
+      }).format(amount).replace("IDR", "Rp").replace(/\u00A0/g, " ").trim();
     }
 
     // Init & Authentication
@@ -2836,31 +2832,33 @@ const firebaseConfig = {
       const itemsContainer = document.getElementById("receipt-items-container");
       itemsContainer.innerHTML = "";
       trx.items.forEach(item => {
+        // Pisahkan nama produk dasar dari nama Varian yang sebelumnya digabung dalam kurung
+        let baseName = item.name;
+        if (item.toppingNames && item.toppingNames.length > 0) {
+          const suffix = ` (${item.toppingNames.join(', ')})`;
+          if (baseName.endsWith(suffix)) {
+            baseName = baseName.slice(0, -suffix.length);
+          }
+        }
+
+        const toppingLinesHtml = (item.toppingNames && item.toppingNames.length > 0)
+          ? item.toppingNames.map(tn => `<div class="text-slate-400 pl-2">- ${tn}</div>`).join('')
+          : '';
+
         itemsContainer.innerHTML += `
           <div class="flex justify-between">
-            <span class="flex-1">${item.name} (${item.qty}x)</span>
+            <span class="flex-1">${baseName} (${item.qty}x)</span>
             <span>${formatRupiah(item.price * item.qty)}</span>
           </div>
+          ${toppingLinesHtml}
         `;
       });
-
-      // MENGATASI TYPEERROR: Menambahkan pemeriksaan keberadaan elemen (null-check guard) secara ketat
-      const appliedTaxRate = typeof trx.taxRate !== 'undefined' ? trx.taxRate : 10;
-      const receiptTaxLabel = document.getElementById("receipt-tax-label");
-      if (receiptTaxLabel) {
-        receiptTaxLabel.innerText = `PB1 (${appliedTaxRate}%)`;
-      }
 
       document.getElementById("receipt-subtotal").innerText = formatRupiah(trx.subtotal);
       const discountAmount = trx.discountAmount || 0;
       const discountPercent = typeof trx.discountPercent !== 'undefined' ? trx.discountPercent : 0;
       document.getElementById("receipt-discount").innerText = `${formatRupiah(discountAmount)} (${discountPercent}%)`;
-      
-      const receiptTax = document.getElementById("receipt-tax");
-      if (receiptTax) {
-        receiptTax.innerText = formatRupiah(trx.tax || 0);
-      }
-      
+
       document.getElementById("receipt-total").innerText = formatRupiah(trx.total);
 
       const changeSection = document.getElementById("receipt-change-section");
@@ -2963,11 +2961,28 @@ const firebaseConfig = {
 
       (trx.items || []).forEach(item => {
         const priceStr = formatRupiah(item.price * item.qty);
-        const wrapped = wrapText(`${item.name} (${item.qty}x)`);
+
+        // Pisahkan nama produk dasar dari nama Varian yang sebelumnya digabung dalam kurung
+        let baseName = item.name;
+        if (item.toppingNames && item.toppingNames.length > 0) {
+          const suffix = ` (${item.toppingNames.join(', ')})`;
+          if (baseName.endsWith(suffix)) {
+            baseName = baseName.slice(0, -suffix.length);
+          }
+        }
+
+        const wrapped = wrapText(`${baseName} (${item.qty}x)`);
         wrapped.forEach((ln, idx) => {
           if (idx === wrapped.length - 1) twoCols(ln, priceStr);
           else writeLine(ln);
         });
+
+        // Cetak setiap Varian di baris tersendiri agar lebih rapi
+        if (item.toppingNames && item.toppingNames.length > 0) {
+          item.toppingNames.forEach(tn => {
+            wrapText(`  - ${tn}`).forEach(ln => writeLine(ln));
+          });
+        }
       });
       separator("-");
 
@@ -2975,8 +2990,6 @@ const firebaseConfig = {
       const discountAmount = trx.discountAmount || 0;
       const discountPercent = typeof trx.discountPercent !== 'undefined' ? trx.discountPercent : 0;
       twoCols("Diskon Member", `${formatRupiah(discountAmount)} (${discountPercent}%)`);
-      const appliedTaxRate = typeof trx.taxRate !== 'undefined' ? trx.taxRate : 10;
-      twoCols(`PB1 (${appliedTaxRate}%)`, formatRupiah(trx.tax || 0));
       setBold(true);
       twoCols("Total Akhir", formatRupiah(trx.total));
       setBold(false);
