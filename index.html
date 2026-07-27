@@ -682,9 +682,15 @@
             <h4 class="font-extrabold text-slate-800 text-sm"><i class="fa-solid fa-pepper-hot text-emerald-600 mr-1.5"></i>Stok Varian</h4>
             <p id="topping-scope-desc" class="text-[11px] text-slate-400 font-semibold mt-0.5">Varian ini akan muncul sebagai pilihan di POS untuk menu dimsum yang wajib memilih Varian.</p>
           </div>
-          <button onclick="openToppingModal('add')" class="px-4 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl hover:bg-emerald-700 transition flex items-center gap-2 shadow-sm shrink-0">
-            <i class="fa-solid fa-plus"></i> Tambah Varian
-          </button>
+          <div class="flex items-center gap-2 shrink-0">
+            <button onclick="openStockApprovalModal()" class="owner-only relative px-4 py-2.5 bg-white text-slate-600 font-bold text-xs rounded-xl border border-slate-200 hover:bg-slate-50 transition flex items-center gap-2 shadow-sm">
+              <i class="fa-solid fa-clipboard-check"></i> Persetujuan Stok
+              <span id="stock-approval-badge" class="hidden absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center">0</span>
+            </button>
+            <button onclick="openToppingModal('add')" class="px-4 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl hover:bg-emerald-700 transition flex items-center gap-2 shadow-sm">
+              <i class="fa-solid fa-plus"></i> Tambah Varian
+            </button>
+          </div>
         </div>
 
         <!-- Filter Pill Outlet (khusus Owner, untuk melihat rekap per/semua outlet) -->
@@ -1048,13 +1054,32 @@
         </div>
         <div>
           <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Stok Varian</label>
-          <input type="number" id="top-stock" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" required>
+          <input type="number" id="top-stock" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold disabled:bg-slate-50 disabled:text-slate-400" required>
+          <p id="top-stock-locked-hint" class="hidden text-[11px] text-amber-600 font-semibold mt-1.5">
+            <i class="fa-solid fa-lock mr-1"></i>Gunakan tombol +/- di tabel Stok Varian untuk mengubah stok. Perubahan wajib disetujui Admin/Owner.
+          </p>
         </div>
         <div class="flex justify-end gap-3 pt-2">
           <button type="button" onclick="closeToppingModal()" class="px-4 py-2 text-slate-500 hover:text-slate-700 text-xs font-bold">Batal</button>
           <button type="submit" class="px-5 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl">Simpan</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL: PERSETUJUAN PERUBAHAN STOK VARIAN DARI KASIR (KHUSUS ADMIN/OWNER) -->
+  <div id="stock-approval-modal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl relative max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between mb-1">
+        <h4 class="text-lg font-bold text-slate-800">Persetujuan Perubahan Stok</h4>
+        <button onclick="closeStockApprovalModal()" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <p class="text-[11px] text-slate-400 font-semibold mb-4">Pengajuan penambahan/pengurangan stok Varian oleh Kasir akan tampil di sini dan hanya berlaku setelah disetujui.</p>
+      <div id="stock-approval-list" class="space-y-3 overflow-y-auto pr-1">
+        <!-- Dynamic list pengajuan stok pending -->
+      </div>
     </div>
   </div>
 
@@ -1289,9 +1314,13 @@
           <span>Jumlah Transaksi:</span>
           <span id="print-report-total-trx" class="text-slate-800 font-extrabold text-sm">0</span>
         </div>
+        <div class="flex justify-between items-center text-slate-500 border-t border-dashed border-slate-300 pt-3">
+          <span>Jumlah Transaksi Tunai:</span>
+          <span id="print-report-total-cash" class="text-slate-800 font-bold">Rp 0</span>
+        </div>
         <div class="flex justify-between items-center text-slate-500">
-          <span>Total Pajak PB1 Terkumpul:</span>
-          <span id="print-report-total-tax" class="text-slate-800 font-bold">Rp 0</span>
+          <span>Jumlah Transaksi Qris:</span>
+          <span id="print-report-total-qris" class="text-slate-800 font-bold">Rp 0</span>
         </div>
         <div class="flex justify-between items-center text-emerald-600 font-black text-sm border-t border-dashed border-slate-300 pt-3">
           <span>Total Omset Akhir:</span>
@@ -1340,6 +1369,7 @@ const firebaseConfig = {
       products: [],
       categories: [],
       toppings: [],
+      stockRequests: [],
       transactions: [],
       outlets: [],
       employees: [],
@@ -1691,6 +1721,9 @@ const firebaseConfig = {
       // 2b. Daftar Varian & Stoknya
       appData.toppings = [];
 
+      // 2c. Permintaan Persetujuan Perubahan Stok Varian dari Kasir
+      appData.stockRequests = [];
+
       // 3. Data Karyawan
       appData.employees = [];
 
@@ -1721,6 +1754,10 @@ const firebaseConfig = {
         // Ambil data Varian
         const topSnap = await pRef.collection('toppings').get();
         appData.toppings = topSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Ambil data permintaan persetujuan perubahan stok Varian dari Kasir
+        const stockReqSnap = await pRef.collection('stockRequests').get();
+        appData.stockRequests = stockReqSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
         // Ambil data outlet
         const outSnap = await pRef.collection('outlets').get();
@@ -1754,6 +1791,7 @@ const firebaseConfig = {
 
         updateUISelectMenus();
         checkLowStockToppings(false);
+        updateStockApprovalBadge();
       } catch (err) {
         console.error("Gagal menarik data dari Firestore: ", err);
         showToast("Error sinkronisasi database, beralih ke Mode Cache Offline.", "error");
@@ -1860,8 +1898,10 @@ const firebaseConfig = {
         // Jaga kompatibilitas dengan cache lama yang belum memiliki data kategori atau Varian
         if (!Array.isArray(appData.categories)) appData.categories = [];
         if (!Array.isArray(appData.toppings)) appData.toppings = [];
+        if (!Array.isArray(appData.stockRequests)) appData.stockRequests = [];
         migrateToppingsWithoutOutlet();
         checkLowStockToppings(false);
+        updateStockApprovalBadge();
       }
     }
 
@@ -3594,6 +3634,7 @@ const firebaseConfig = {
       renderToppingOutletFilterPills();
       renderToppingTable();
       checkLowStockToppings(true);
+      updateStockApprovalBadge();
     }
 
     // Render pill filter outlet untuk rekap Stok Varian (khusus Owner).
@@ -3739,11 +3780,16 @@ const firebaseConfig = {
         const outletName = (appData.outlets.find(o => o.id === t.outletId) || {}).name || 'Belum Ditugaskan';
         const isLow = t.stock < 10;
 
+        // Cek apakah Varian ini punya pengajuan perubahan stok yang masih menunggu persetujuan
+        const pendingReq = (appData.stockRequests || []).find(r => r.toppingId === t.id && r.status === 'pending');
+        const isDisabled = isKasir && !!pendingReq;
+
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50 transition border-b border-slate-100">
             <td class="py-3 px-6 text-slate-800 font-bold">
               ${t.name}
               ${t.needsStockVerification ? `<span class="ml-2 inline-block px-2 py-0.5 text-[9px] font-bold rounded-md bg-amber-100 text-amber-700 align-middle">Perlu Verifikasi Stok</span>` : ''}
+              ${pendingReq ? `<span class="ml-2 inline-block px-2 py-0.5 text-[9px] font-bold rounded-md bg-blue-100 text-blue-700 align-middle"><i class="fa-solid fa-clock mr-1"></i>Menunggu Persetujuan (${pendingReq.delta > 0 ? '+' : ''}${pendingReq.delta})</span>` : ''}
             </td>
             <td class="py-3 px-6 text-slate-500 owner-only">${outletName}</td>
             <td class="py-3 px-6 text-center">
@@ -3755,8 +3801,8 @@ const firebaseConfig = {
               </span>
             </td>
             <td class="py-3 px-6 text-right">
-              <button onclick="adjustToppingStock('${t.id}', -1)" class="w-7 h-7 bg-white text-slate-600 rounded-lg inline-flex items-center justify-center border border-slate-200 hover:bg-slate-50 mr-1"><i class="fa-solid fa-minus text-[10px]"></i></button>
-              <button onclick="adjustToppingStock('${t.id}', 1)" class="w-7 h-7 bg-white text-slate-600 rounded-lg inline-flex items-center justify-center border border-slate-200 hover:bg-slate-50 mr-2"><i class="fa-solid fa-plus text-[10px]"></i></button>
+              <button onclick="adjustToppingStock('${t.id}', -1)" ${isDisabled ? 'disabled' : ''} class="w-7 h-7 bg-white text-slate-600 rounded-lg inline-flex items-center justify-center border border-slate-200 hover:bg-slate-50 mr-1 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"><i class="fa-solid fa-minus text-[10px]"></i></button>
+              <button onclick="adjustToppingStock('${t.id}', 1)" ${isDisabled ? 'disabled' : ''} class="w-7 h-7 bg-white text-slate-600 rounded-lg inline-flex items-center justify-center border border-slate-200 hover:bg-slate-50 mr-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"><i class="fa-solid fa-plus text-[10px]"></i></button>
               <button onclick="openToppingModal('edit', '${t.id}')" class="text-blue-500 hover:text-blue-600 text-sm mr-3"><i class="fa-solid fa-pen-to-square"></i></button>
               <button onclick="deleteTopping('${t.id}')" class="text-red-500 hover:text-red-600 text-sm"><i class="fa-solid fa-trash-can"></i></button>
             </td>
@@ -3775,6 +3821,21 @@ const firebaseConfig = {
         return;
       }
 
+      // ===== ALUR KASIR: WAJIB PERSETUJUAN ADMIN/OWNER =====
+      // Kasir tidak langsung mengubah stok. Sistem membuat pengajuan yang menunggu
+      // disetujui/ditolak oleh Admin/Owner melalui modal "Persetujuan Stok".
+      if (currentUser.role === 'kasir') {
+        const hasPending = appData.stockRequests.some(r => r.toppingId === id && r.status === 'pending');
+        if (hasPending) {
+          showToast("Varian ini masih memiliki pengajuan yang menunggu persetujuan Admin/Owner.", "warning");
+          return;
+        }
+
+        await submitStockRequest(topping, delta);
+        return;
+      }
+
+      // ===== ALUR OWNER/ADMIN: LANGSUNG DITERAPKAN =====
       const newStock = Math.max(0, (topping.stock || 0) + delta);
 
       if (!IS_PREVIEW && dbRef) {
@@ -3793,6 +3854,164 @@ const firebaseConfig = {
       }
       renderToppingTable();
       checkLowStockToppings(true);
+    }
+
+    // Membuat pengajuan perubahan stok Varian dari Kasir, menunggu persetujuan Admin/Owner
+    async function submitStockRequest(topping, delta) {
+      const outletName = (appData.outlets.find(o => o.id === topping.outletId) || {}).name || '-';
+      const newRequest = {
+        id: `SR-${Date.now()}`,
+        toppingId: topping.id,
+        toppingName: topping.name,
+        outletId: topping.outletId,
+        outletName: outletName,
+        delta: delta,
+        currentStock: topping.stock || 0,
+        status: 'pending',
+        requestedBy: currentUser.id || currentUser.name,
+        requestedByName: currentUser.name,
+        requestedAt: new Date().toISOString()
+      };
+
+      if (!IS_PREVIEW && dbRef) {
+        try {
+          const pRef = dbRef.collection('artifacts').doc(appId).collection('public').doc('data').collection('stockRequests');
+          await pRef.doc(newRequest.id).set(newRequest);
+          await loadFirebaseData();
+        } catch (err) {
+          showToast(err.message, "error");
+          return;
+        }
+      } else {
+        appData.stockRequests.push(newRequest);
+        saveToLocalCache();
+      }
+
+      renderToppingTable();
+      updateStockApprovalBadge();
+      showToast(`Pengajuan ${delta > 0 ? 'penambahan' : 'pengurangan'} stok "${topping.name}" berhasil dikirim. Menunggu persetujuan Admin/Owner.`, "success");
+    }
+
+    // ================= MODAL PERSETUJUAN STOK VARIAN (KHUSUS ADMIN/OWNER) =================
+    window.openStockApprovalModal = function() {
+      renderStockApprovalList();
+      document.getElementById("stock-approval-modal").classList.remove("hidden");
+    };
+
+    window.closeStockApprovalModal = function() {
+      document.getElementById("stock-approval-modal").classList.add("hidden");
+    };
+
+    function renderStockApprovalList() {
+      const container = document.getElementById("stock-approval-list");
+      if (!container) return;
+
+      const pending = (appData.stockRequests || []).filter(r => r.status === 'pending')
+        .sort((a, b) => new Date(a.requestedAt) - new Date(b.requestedAt));
+
+      if (pending.length === 0) {
+        container.innerHTML = `<div class="py-10 text-center text-slate-400 text-xs font-semibold">Tidak ada pengajuan perubahan stok yang menunggu persetujuan.</div>`;
+        return;
+      }
+
+      container.innerHTML = pending.map(r => `
+        <div class="flex items-center justify-between gap-3 p-4 rounded-2xl border border-slate-200 bg-slate-50">
+          <div class="min-w-0">
+            <p class="font-bold text-slate-800 text-sm truncate">${r.toppingName}</p>
+            <p class="text-[11px] text-slate-400 font-semibold mt-0.5">Outlet: ${r.outletName || '-'}</p>
+            <p class="text-[11px] text-slate-400 font-semibold">Diajukan oleh: ${r.requestedByName || '-'}</p>
+            <p class="text-xs font-bold mt-1.5 ${r.delta > 0 ? 'text-emerald-600' : 'text-red-500'}">
+              ${r.delta > 0 ? '+' : ''}${r.delta} stok (dari ${r.currentStock} menjadi ${Math.max(0, r.currentStock + r.delta)})
+            </p>
+          </div>
+          <div class="flex gap-2 shrink-0">
+            <button onclick="rejectStockRequest('${r.id}')" class="w-9 h-9 bg-white text-red-500 rounded-xl inline-flex items-center justify-center border border-slate-200 hover:bg-red-50" title="Tolak">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            <button onclick="approveStockRequest('${r.id}')" class="w-9 h-9 bg-emerald-600 text-white rounded-xl inline-flex items-center justify-center hover:bg-emerald-700" title="Setujui">
+              <i class="fa-solid fa-check"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Menyetujui pengajuan: menerapkan perubahan stok ke Varian terkait
+    window.approveStockRequest = async function(requestId) {
+      const request = appData.stockRequests.find(r => r.id === requestId);
+      if (!request) return;
+
+      const topping = appData.toppings.find(t => t.id === request.toppingId);
+      if (!topping) {
+        showToast("Varian terkait tidak ditemukan, pengajuan dibatalkan.", "error");
+        await removeStockRequest(requestId);
+        return;
+      }
+
+      const newStock = Math.max(0, (topping.stock || 0) + request.delta);
+
+      if (!IS_PREVIEW && dbRef) {
+        try {
+          const pRef = dbRef.collection('artifacts').doc(appId).collection('public').doc('data');
+          await pRef.collection('toppings').doc(topping.id).update({ stock: newStock, needsStockVerification: false });
+          await pRef.collection('stockRequests').doc(requestId).delete();
+          await loadFirebaseData();
+        } catch (err) {
+          showToast(err.message, "error");
+          return;
+        }
+      } else {
+        topping.stock = newStock;
+        topping.needsStockVerification = false;
+        appData.stockRequests = appData.stockRequests.filter(r => r.id !== requestId);
+        saveToLocalCache();
+      }
+
+      renderStockApprovalList();
+      renderToppingTable();
+      updateStockApprovalBadge();
+      checkLowStockToppings(true);
+      showToast(`Pengajuan stok "${request.toppingName}" disetujui.`, "success");
+    };
+
+    // Menolak pengajuan: stok Varian tidak berubah, pengajuan dihapus
+    window.rejectStockRequest = async function(requestId) {
+      const request = appData.stockRequests.find(r => r.id === requestId);
+      if (!request) return;
+
+      await removeStockRequest(requestId);
+      renderStockApprovalList();
+      renderToppingTable();
+      updateStockApprovalBadge();
+      showToast(`Pengajuan stok "${request.toppingName}" ditolak.`, "warning");
+    };
+
+    async function removeStockRequest(requestId) {
+      if (!IS_PREVIEW && dbRef) {
+        try {
+          const pRef = dbRef.collection('artifacts').doc(appId).collection('public').doc('data').collection('stockRequests');
+          await pRef.doc(requestId).delete();
+          await loadFirebaseData();
+        } catch (err) {
+          showToast(err.message, "error");
+        }
+      } else {
+        appData.stockRequests = appData.stockRequests.filter(r => r.id !== requestId);
+        saveToLocalCache();
+      }
+    }
+
+    // Memperbarui badge jumlah pengajuan yang menunggu persetujuan (hanya relevan untuk Owner/Admin)
+    function updateStockApprovalBadge() {
+      const badge = document.getElementById("stock-approval-badge");
+      if (!badge) return;
+      const pendingCount = (appData.stockRequests || []).filter(r => r.status === 'pending').length;
+      if (pendingCount > 0) {
+        badge.innerText = pendingCount;
+        badge.classList.remove("hidden");
+      } else {
+        badge.classList.add("hidden");
+      }
     }
 
     function openToppingModal(mode, id = null) {
@@ -3818,6 +4037,12 @@ const firebaseConfig = {
         outletSelect.innerHTML = appData.outlets.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
       }
 
+      // Reset kondisi field stok setiap kali modal dibuka (default: bisa diisi bebas)
+      const stockInput = document.getElementById("top-stock");
+      const stockHint = document.getElementById("top-stock-locked-hint");
+      stockInput.disabled = false;
+      if (stockHint) stockHint.classList.add("hidden");
+
       if (mode === 'add') {
         document.getElementById("topping-modal-title").innerText = "Tambah Varian Baru";
         document.getElementById("topping-id").value = "";
@@ -3833,6 +4058,13 @@ const firebaseConfig = {
           document.getElementById("top-name").value = t.name;
           document.getElementById("top-stock").value = t.stock;
           if (!isKasir) outletSelect.value = t.outletId || '';
+
+          // Kasir mengedit Varian yang sudah ada: stok dikunci agar perubahan stok
+          // tetap wajib melalui tombol +/- dan alur persetujuan Admin/Owner.
+          if (isKasir) {
+            stockInput.disabled = true;
+            if (stockHint) stockHint.classList.remove("hidden");
+          }
         }
       }
       document.getElementById("topping-modal").classList.remove("hidden");
@@ -3871,6 +4103,16 @@ const firebaseConfig = {
         outletId: chosenOutletId,
         needsStockVerification: false
       };
+
+      // Jaga-jaga anti-manipulasi: Kasir yang mengedit Varian yang sudah ada TIDAK boleh
+      // mengubah nilai stok melalui form ini. Stok wajib diubah lewat tombol +/- yang
+      // melalui alur persetujuan Admin/Owner.
+      if (id && isKasir) {
+        const existingTopping = appData.toppings.find(t => t.id === id);
+        if (existingTopping) {
+          payload.stock = existingTopping.stock;
+        }
+      }
 
       if (!IS_PREVIEW && dbRef) {
         try {
@@ -4588,10 +4830,18 @@ const firebaseConfig = {
       let totalTrx = filtered.length;
       let totalTax = 0;
       let totalSales = 0;
+      let totalCash = 0;
+      let totalQris = 0;
 
       filtered.forEach(t => {
         totalTax += t.tax || 0;
         totalSales += t.total || 0;
+
+        if (t.paymentMethod === 'Tunai') {
+          totalCash += t.total || 0;
+        } else if (t.paymentMethod === 'QRIS') {
+          totalQris += t.total || 0;
+        }
         
         const dateStr = new Date(t.date).toLocaleDateString('id-ID', {
           year: 'numeric', month: '2-digit', day: '2-digit'
@@ -4614,7 +4864,8 @@ const firebaseConfig = {
 
       // Mengisi kotak total ringkasan
       document.getElementById("print-report-total-trx").innerText = totalTrx;
-      document.getElementById("print-report-total-tax").innerText = formatRupiah(totalTax);
+      document.getElementById("print-report-total-cash").innerText = formatRupiah(totalCash);
+      document.getElementById("print-report-total-qris").innerText = formatRupiah(totalQris);
       document.getElementById("print-report-total-sales").innerText = formatRupiah(totalSales);
 
       // Trigger printer layout laporan
@@ -4769,6 +5020,8 @@ const firebaseConfig = {
 
           // Jaga kompatibilitas dengan file cadangan lama yang belum memiliki data Varian
           if (!Array.isArray(importedData.toppings)) importedData.toppings = [];
+          // Jaga kompatibilitas dengan file cadangan lama yang belum memiliki data permintaan persetujuan stok
+          if (!Array.isArray(importedData.stockRequests)) importedData.stockRequests = [];
 
           showConfirm(
             "Konfirmasi Pulihkan Data", 
@@ -4790,6 +5043,9 @@ const firebaseConfig = {
                   }
                   for (let item of appData.toppings) {
                     await pRef.collection('toppings').doc(item.id).set(item);
+                  }
+                  for (let item of appData.stockRequests) {
+                    await pRef.collection('stockRequests').doc(item.id).set(item);
                   }
                   for (let item of appData.outlets) {
                     await pRef.collection('outlets').doc(item.id).set(item);
