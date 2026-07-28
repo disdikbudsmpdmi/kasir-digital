@@ -543,6 +543,17 @@
             </button>
           </div>
 
+          <!-- Nama Pelanggan (Opsional) — hanya disimpan sementara di memori browser (tidak tersimpan ke database, hilang jika halaman di-refresh) -->
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Nama Pelanggan (Opsional)</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                <i class="fa-solid fa-user text-sm"></i>
+              </span>
+              <input type="text" id="pos-customer-name-input" oninput="updatePosCustomerName(this.value)" placeholder="Contoh: Budi, Meja 4, dsb." class="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:border-emerald-500 transition text-sm font-semibold">
+            </div>
+          </div>
+
           <!-- Cart Items List -->
           <div id="cart-items-container" class="space-y-3 overflow-y-auto min-h-[180px] max-h-[300px] pr-1">
             <!-- Dynamic Cart Items -->
@@ -1039,6 +1050,7 @@
       <h4 class="text-lg font-bold text-slate-800 mb-4" id="topping-modal-title">Kelola Varian</h4>
       <form id="topping-form" class="space-y-4">
         <input type="hidden" id="topping-id">
+        <input type="hidden" id="top-stock-original">
         <div>
           <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Nama Varian</label>
           <input type="text" id="top-name" placeholder="Contoh: Sambal Matah, Saos Telur Asin, Mayo" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold" required>
@@ -1056,7 +1068,7 @@
           <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Stok Varian</label>
           <input type="number" id="top-stock" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold disabled:bg-slate-50 disabled:text-slate-400" required>
           <p id="top-stock-locked-hint" class="hidden text-[11px] text-amber-600 font-semibold mt-1.5">
-            <i class="fa-solid fa-lock mr-1"></i>Gunakan tombol +/- di tabel Stok Varian untuk mengubah stok. Perubahan wajib disetujui Admin/Owner.
+            <i class="fa-solid fa-circle-info mr-1"></i>Perubahan jumlah stok di atas akan dikirim sebagai pengajuan dan wajib disetujui Admin/Owner terlebih dahulu.
           </p>
         </div>
         <div class="flex justify-end gap-3 pt-2">
@@ -1079,6 +1091,90 @@
       <p class="text-[11px] text-slate-400 font-semibold mb-4">Pengajuan penambahan/pengurangan stok Varian oleh Kasir akan tampil di sini dan hanya berlaku setelah disetujui.</p>
       <div id="stock-approval-list" class="space-y-3 overflow-y-auto pr-1">
         <!-- Dynamic list pengajuan stok pending -->
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT TRANSAKSI (PERBAIKAN KESALAHAN TRANSAKSI) -->
+  <div id="edit-trx-modal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl relative max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between mb-1">
+        <h4 class="text-lg font-bold text-slate-800">Edit Transaksi</h4>
+        <button onclick="closeEditTransactionModal()" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <p class="text-[11px] text-slate-400 font-semibold mb-4">Gunakan fitur ini untuk memperbaiki kesalahan input transaksi (mis. salah jumlah, salah metode bayar, atau item keliru). Perubahan di sini tidak otomatis mengembalikan/mengurangi stok Produk & Varian, silakan sesuaikan stok secara manual bila perlu.</p>
+
+      <div class="overflow-y-auto pr-1 space-y-4">
+        <input type="hidden" id="edit-trx-id">
+
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div class="bg-slate-50 rounded-xl px-3 py-2">
+            <span class="block text-slate-400 font-bold uppercase text-[10px]">ID Transaksi</span>
+            <span id="edit-trx-id-label" class="font-bold text-slate-700">-</span>
+          </div>
+          <div class="bg-slate-50 rounded-xl px-3 py-2">
+            <span class="block text-slate-400 font-bold uppercase text-[10px]">Tanggal & Kasir</span>
+            <span id="edit-trx-meta-label" class="font-bold text-slate-700">-</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Daftar Item</label>
+          <div id="edit-trx-items" class="space-y-2">
+            <!-- Dynamic item rows -->
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Diskon (%)</label>
+          <input type="number" id="edit-trx-discount" min="0" max="100" oninput="recalcEditTransactionTotals()" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Metode Pembayaran</label>
+          <select id="edit-trx-payment" onchange="recalcEditTransactionTotals()" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold bg-white">
+            <option value="Tunai">Tunai</option>
+            <option value="QRIS">QRIS</option>
+          </select>
+        </div>
+
+        <div id="edit-trx-cash-wrapper">
+          <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Uang Diterima</label>
+          <input type="number" id="edit-trx-cash" oninput="recalcEditTransactionTotals()" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold">
+        </div>
+
+        <div class="bg-slate-50 rounded-2xl p-4 space-y-1.5 text-xs font-semibold">
+          <div class="flex justify-between text-slate-500"><span>Subtotal</span><span id="edit-trx-subtotal">Rp 0</span></div>
+          <div class="flex justify-between text-slate-500"><span>Diskon</span><span id="edit-trx-discount-amount">Rp 0</span></div>
+          <div class="flex justify-between text-slate-500"><span>Pajak</span><span id="edit-trx-tax">Rp 0</span></div>
+          <div class="flex justify-between text-slate-800 font-extrabold text-sm pt-1.5 border-t border-dashed border-slate-300"><span>Total</span><span id="edit-trx-total">Rp 0</span></div>
+          <div id="edit-trx-change-row" class="flex justify-between text-emerald-600"><span>Kembalian</span><span id="edit-trx-change">Rp 0</span></div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-4">
+        <button type="button" onclick="closeEditTransactionModal()" class="px-4 py-2 text-slate-500 hover:text-slate-700 text-xs font-bold">Batal</button>
+        <button type="button" onclick="saveEditedTransaction()" class="px-5 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl">Simpan Perubahan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: KONFIRMASI HAPUS TRANSAKSI (MODERN, MENGGANTIKAN confirm() BAWAAN BROWSER) -->
+  <div id="delete-trx-confirm-modal" class="fixed inset-0 z-[60] hidden bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl relative text-center">
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mb-4">
+        <i class="fa-solid fa-trash-can text-xl"></i>
+      </div>
+      <h4 class="text-base font-extrabold text-slate-800 mb-2">Hapus Transaksi?</h4>
+      <p id="delete-trx-message" class="text-sm text-slate-500 font-semibold mb-1">-</p>
+      <p class="text-[11px] text-amber-600 font-semibold bg-amber-50 rounded-xl px-3 py-2.5 mt-3 mb-5 text-left">
+        <i class="fa-solid fa-circle-info mr-1"></i>Stok Produk & Varian yang terpakai di transaksi ini akan <span class="font-extrabold">dikembalikan otomatis</span>. Tindakan ini tidak bisa dibatalkan.
+      </p>
+      <div class="flex gap-3">
+        <button type="button" onclick="closeDeleteTrxModal()" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 transition">Batal</button>
+        <button type="button" onclick="confirmDeleteTransaction()" class="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white font-bold text-xs hover:bg-red-600 transition shadow-sm">Ya, Hapus</button>
       </div>
     </div>
   </div>
@@ -1213,6 +1309,9 @@
           <div class="flex justify-between">
             <span>Staf: <span id="receipt-staff">Kasir Utama</span></span>
             <span>Tipe: <span id="receipt-type">Tunai</span></span>
+          </div>
+          <div id="receipt-customer-row" class="hidden justify-between">
+            <span>Pelanggan: <span id="receipt-customer-name">-</span></span>
           </div>
         </div>
 
@@ -1392,9 +1491,17 @@ const firebaseConfig = {
     // POS Active State
     let cart = [];
     let currentReceiptTrx = null; // Menyimpan data transaksi yang sedang tampil di modal struk (untuk keperluan cetak thermal Bluetooth)
+    let currentReceiptCustomerName = null; // Nama pelanggan sesi cetak saat ini saja; tidak pernah disimpan ke database
     let cartDiscount = 0;
     let activeCategory = 'all';
     let selectedPaymentMethod = 'Tunai';
+    // Nama pelanggan POS: HANYA disimpan di memori browser (variabel JS), TIDAK pernah
+    // ditulis ke appData/Firestore/localStorage. Otomatis hilang jika halaman di-refresh.
+    let posCustomerName = '';
+
+    function updatePosCustomerName(value) {
+      posCustomerName = (value || '').trim();
+    }
 
     // Global variables for environment-provided data
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
@@ -2456,6 +2563,9 @@ const firebaseConfig = {
     // Mengosongkan keranjang
     function clearCart() {
       cart = [];
+      posCustomerName = '';
+      const customerNameInput = document.getElementById("pos-customer-name-input");
+      if (customerNameInput) customerNameInput.value = '';
       renderCart();
     }
 
@@ -2844,8 +2954,8 @@ const firebaseConfig = {
         saveLocalTrx(payload);
       }
 
-      // Tampilkan struk termal virtual
-      renderThermalReceipt(payload);
+      // Tampilkan struk termal virtual (nama pelanggan hanya dari memori sesi ini, tidak disimpan ke payload/database)
+      renderThermalReceipt(payload, posCustomerName);
 
       // Cek notifikasi stok Varian menipis (< 10 pcs) setelah stok berkurang akibat transaksi ini
       checkLowStockToppings(true);
@@ -2853,6 +2963,9 @@ const firebaseConfig = {
       // Reset Keranjang & Input
       cart = [];
       document.getElementById("cash-received-input").value = "";
+      posCustomerName = '';
+      const customerNameInput = document.getElementById("pos-customer-name-input");
+      if (customerNameInput) customerNameInput.value = '';
       renderCart();
       showToast("Transaksi Berhasil Diproses!");
     }
@@ -2862,8 +2975,9 @@ const firebaseConfig = {
       saveToLocalCache();
     }
 
-    function renderThermalReceipt(trx) {
+    function renderThermalReceipt(trx, customerName = null) {
       currentReceiptTrx = trx; // Simpan untuk keperluan cetak thermal via RawBT
+      currentReceiptCustomerName = customerName || null; // Nama pelanggan sesi ini saja (tidak tersimpan ke database)
       // Load pengaturan toko
       const sett = appData.settings;
       document.getElementById("receipt-store-name").innerText = sett.storeName;
@@ -2875,6 +2989,19 @@ const firebaseConfig = {
       document.getElementById("receipt-date").innerText = new Date(trx.date).toLocaleString('id-ID');
       document.getElementById("receipt-staff").innerText = trx.cashierName;
       document.getElementById("receipt-type").innerText = trx.paymentMethod;
+
+      // Nama Pelanggan: HANYA berasal dari memori browser sesi saat ini (tidak tersimpan
+      // ke database). Saat cetak ulang struk lama, baris ini tidak akan tampil karena
+      // data nama pelanggan memang tidak pernah ikut disimpan bersama transaksi.
+      const customerRow = document.getElementById("receipt-customer-row");
+      if (customerName) {
+        document.getElementById("receipt-customer-name").innerText = customerName;
+        customerRow.classList.remove("hidden");
+        customerRow.classList.add("flex");
+      } else {
+        customerRow.classList.add("hidden");
+        customerRow.classList.remove("flex");
+      }
 
       // Populate Items
       const itemsContainer = document.getElementById("receipt-items-container");
@@ -3005,6 +3132,9 @@ const firebaseConfig = {
       twoCols("No: " + trx.id, trxDate.toLocaleDateString('id-ID'));
       writeLine("      " + trxDate.toLocaleTimeString('id-ID'));
       twoCols("Staf: " + (trx.cashierName || "-"), "Tipe: " + (trx.paymentMethod || "-"));
+      if (currentReceiptCustomerName) {
+        writeLine("Pelanggan: " + currentReceiptCustomerName);
+      }
       separator("-");
 
       (trx.items || []).forEach(item => {
@@ -3130,6 +3260,279 @@ const firebaseConfig = {
         return;
       }
       renderThermalReceipt(trx);
+    }
+
+    // ================= EDIT & HAPUS TRANSAKSI (PERBAIKAN KESALAHAN INPUT) =================
+    let editTrxDraftItems = []; // Salinan sementara item transaksi yang sedang diedit (belum tersimpan)
+
+    window.openEditTransactionModal = function(id) {
+      const trx = appData.transactions.find(t => t.id === id);
+      if (!trx) {
+        showToast("Data transaksi tidak ditemukan!", "error");
+        return;
+      }
+
+      // Kasir hanya boleh mengedit transaksi dari outletnya sendiri
+      if (currentUser.role === 'kasir' && trx.outletId !== currentUser.outletId) {
+        showToast("Akses Ditolak: Transaksi ini bukan milik outlet Anda.", "error");
+        return;
+      }
+
+      document.getElementById("edit-trx-id").value = trx.id;
+      document.getElementById("edit-trx-id-label").innerText = trx.id;
+      const dateStr = new Date(trx.date).toLocaleDateString('id-ID', {
+        year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+      });
+      document.getElementById("edit-trx-meta-label").innerText = `${dateStr} - ${trx.cashierName}`;
+      document.getElementById("edit-trx-discount").value = trx.discountPercent || 0;
+      document.getElementById("edit-trx-payment").value = trx.paymentMethod || 'Tunai';
+      document.getElementById("edit-trx-cash").value = trx.cashReceived || 0;
+
+      // Salin item transaksi ke draft sementara (agar batal tidak mengubah data asli)
+      editTrxDraftItems = JSON.parse(JSON.stringify(trx.items || []));
+
+      renderEditTransactionItems();
+      recalcEditTransactionTotals();
+      document.getElementById("edit-trx-modal").classList.remove("hidden");
+    };
+
+    window.closeEditTransactionModal = function() {
+      document.getElementById("edit-trx-modal").classList.add("hidden");
+      editTrxDraftItems = [];
+    };
+
+    function renderEditTransactionItems() {
+      const container = document.getElementById("edit-trx-items");
+      if (!container) return;
+
+      if (editTrxDraftItems.length === 0) {
+        container.innerHTML = `<div class="py-4 text-center text-slate-400 text-xs font-semibold">Tidak ada item tersisa. Gunakan tombol Hapus Transaksi jika ingin membatalkan seluruh transaksi ini.</div>`;
+        return;
+      }
+
+      container.innerHTML = editTrxDraftItems.map((item, idx) => `
+        <div class="flex items-center gap-2 p-3 rounded-xl border border-slate-200">
+          <div class="flex-1 min-w-0">
+            <p class="font-bold text-slate-800 text-xs truncate">${item.name}</p>
+            <p class="text-[10px] text-slate-400 font-semibold">${formatRupiah(item.price)} / item</p>
+          </div>
+          <input type="number" min="1" value="${item.qty}" onchange="updateEditTransactionQty(${idx}, this.value)" class="w-16 px-2 py-1.5 rounded-lg border border-slate-200 text-center text-xs font-bold">
+          <button onclick="removeEditTransactionItem(${idx})" class="w-8 h-8 shrink-0 bg-white text-red-500 rounded-lg inline-flex items-center justify-center border border-slate-200 hover:bg-red-50" title="Hapus Item">
+            <i class="fa-solid fa-trash-can text-xs"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    window.updateEditTransactionQty = function(idx, value) {
+      const qty = Math.max(1, parseInt(value) || 1);
+      if (editTrxDraftItems[idx]) {
+        editTrxDraftItems[idx].qty = qty;
+      }
+      renderEditTransactionItems();
+      recalcEditTransactionTotals();
+    };
+
+    window.removeEditTransactionItem = function(idx) {
+      editTrxDraftItems.splice(idx, 1);
+      renderEditTransactionItems();
+      recalcEditTransactionTotals();
+    };
+
+    function recalcEditTransactionTotals() {
+      const subtotal = editTrxDraftItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
+      const discountPercent = Math.min(100, Math.max(0, parseFloat(document.getElementById("edit-trx-discount").value) || 0));
+      const discountAmount = Math.round(subtotal * (discountPercent / 100));
+      const taxRate = appData.settings.taxRate || 0;
+      const taxableAmount = Math.max(0, subtotal - discountAmount);
+      const tax = Math.round(taxableAmount * (taxRate / 100));
+      const total = taxableAmount + tax;
+
+      const paymentMethod = document.getElementById("edit-trx-payment").value;
+      const cashWrapper = document.getElementById("edit-trx-cash-wrapper");
+      const changeRow = document.getElementById("edit-trx-change-row");
+      let cashReceived = total;
+      let change = 0;
+
+      if (paymentMethod === 'Tunai') {
+        cashWrapper.classList.remove("hidden");
+        changeRow.classList.remove("hidden");
+        cashReceived = parseInt(document.getElementById("edit-trx-cash").value) || 0;
+        change = cashReceived - total;
+      } else {
+        cashWrapper.classList.add("hidden");
+        changeRow.classList.add("hidden");
+        cashReceived = total;
+        change = 0;
+      }
+
+      document.getElementById("edit-trx-subtotal").innerText = formatRupiah(subtotal);
+      document.getElementById("edit-trx-discount-amount").innerText = "- " + formatRupiah(discountAmount);
+      document.getElementById("edit-trx-tax").innerText = formatRupiah(tax);
+      document.getElementById("edit-trx-total").innerText = formatRupiah(total);
+      document.getElementById("edit-trx-change").innerText = formatRupiah(Math.max(0, change));
+    }
+
+    window.saveEditedTransaction = async function() {
+      const id = document.getElementById("edit-trx-id").value;
+      const trx = appData.transactions.find(t => t.id === id);
+      if (!trx) return;
+
+      if (editTrxDraftItems.length === 0) {
+        showToast("Transaksi minimal harus punya 1 item. Gunakan tombol Hapus Transaksi jika ingin membatalkan seluruh transaksi ini.", "warning");
+        return;
+      }
+
+      const subtotal = editTrxDraftItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
+      const discountPercent = Math.min(100, Math.max(0, parseFloat(document.getElementById("edit-trx-discount").value) || 0));
+      const discountAmount = Math.round(subtotal * (discountPercent / 100));
+      const taxRate = appData.settings.taxRate || 0;
+      const taxableAmount = Math.max(0, subtotal - discountAmount);
+      const tax = Math.round(taxableAmount * (taxRate / 100));
+      const total = taxableAmount + tax;
+      const paymentMethod = document.getElementById("edit-trx-payment").value;
+      const cashReceived = paymentMethod === 'Tunai' ? (parseInt(document.getElementById("edit-trx-cash").value) || 0) : total;
+      const change = paymentMethod === 'Tunai' ? Math.max(0, cashReceived - total) : 0;
+
+      if (paymentMethod === 'Tunai' && cashReceived < total) {
+        showToast("Uang diterima tidak boleh kurang dari total transaksi.", "warning");
+        return;
+      }
+
+      const updatedFields = {
+        items: editTrxDraftItems,
+        subtotal: subtotal,
+        discountPercent: discountPercent,
+        discountAmount: discountAmount,
+        tax: tax,
+        taxRate: taxRate,
+        total: total,
+        paymentMethod: paymentMethod,
+        cashReceived: cashReceived,
+        change: change
+      };
+
+      if (!IS_PREVIEW && dbRef) {
+        try {
+          const pRef = dbRef.collection('artifacts').doc(appId).collection('public').doc('data').collection('transactions');
+          await pRef.doc(id).update(updatedFields);
+          await loadFirebaseData();
+        } catch (err) {
+          showToast(err.message, "error");
+          return;
+        }
+      } else {
+        Object.assign(trx, updatedFields);
+        saveToLocalCache();
+      }
+
+      closeEditTransactionModal();
+      filterReports();
+      showToast("Transaksi berhasil diperbarui.");
+    };
+
+    // Menyimpan ID transaksi yang sedang menunggu konfirmasi hapus dari modal kustom
+    let pendingDeleteTrxId = null;
+
+    window.deleteTransaction = function(id) {
+      const trx = appData.transactions.find(t => t.id === id);
+      if (!trx) {
+        showToast("Data transaksi tidak ditemukan!", "error");
+        return;
+      }
+
+      // Kasir hanya boleh menghapus transaksi dari outletnya sendiri
+      if (currentUser.role === 'kasir' && trx.outletId !== currentUser.outletId) {
+        showToast("Akses Ditolak: Transaksi ini bukan milik outlet Anda.", "error");
+        return;
+      }
+
+      pendingDeleteTrxId = id;
+      document.getElementById("delete-trx-message").innerHTML = `Hapus transaksi <span class="font-extrabold text-slate-800">${trx.id}</span> senilai <span class="font-extrabold text-slate-800">${formatRupiah(trx.total)}</span>?`;
+      document.getElementById("delete-trx-confirm-modal").classList.remove("hidden");
+    };
+
+    window.closeDeleteTrxModal = function() {
+      document.getElementById("delete-trx-confirm-modal").classList.add("hidden");
+      pendingDeleteTrxId = null;
+    };
+
+    window.confirmDeleteTransaction = async function() {
+      const id = pendingDeleteTrxId;
+      const trx = appData.transactions.find(t => t.id === id);
+      if (!id || !trx) {
+        closeDeleteTrxModal();
+        return;
+      }
+
+      if (!IS_PREVIEW && dbRef) {
+        try {
+          const pRef = dbRef.collection('artifacts').doc(appId).collection('public').doc('data');
+          await restoreStockForTransaction(trx, pRef);
+          await pRef.collection('transactions').doc(id).delete();
+          await loadFirebaseData();
+        } catch (err) {
+          showToast(err.message, "error");
+          return;
+        }
+      } else {
+        restoreStockForTransaction(trx, null);
+        appData.transactions = appData.transactions.filter(t => t.id !== id);
+        saveToLocalCache();
+      }
+
+      closeDeleteTrxModal();
+      filterReports();
+      renderToppingTable();
+      checkLowStockToppings(true);
+      showToast("Transaksi berhasil dihapus & stok Produk/Varian sudah dikembalikan otomatis.");
+    };
+
+    // Mengembalikan stok Produk & Varian yang terpotong akibat suatu transaksi (dipanggil saat transaksi dihapus).
+    // pRef diisi referensi koleksi Firestore 'data' jika mode cloud aktif, atau null untuk mode local cache.
+    async function restoreStockForTransaction(trx, pRef) {
+      if (!trx || !Array.isArray(trx.items)) return;
+
+      for (const item of trx.items) {
+        // Kembalikan stok Produk
+        const product = appData.products.find(p => p.id === item.id);
+        if (product) {
+          const restoredStock = (product.stock || 0) + item.qty;
+          if (pRef) {
+            await pRef.collection('products').doc(product.id).update({ stock: restoredStock });
+          } else {
+            product.stock = restoredStock;
+          }
+        }
+
+        // Kembalikan stok Varian (mendukung format baru berkuantitas maupun format lama)
+        const toppingQtyMap = item.toppingQuantities || {};
+        if (Object.keys(toppingQtyMap).length > 0) {
+          for (const [toppingId, toppingQty] of Object.entries(toppingQtyMap)) {
+            const topping = appData.toppings.find(t => t.id === toppingId);
+            if (topping) {
+              const restoredStock = (topping.stock || 0) + (item.qty * toppingQty);
+              if (pRef) {
+                await pRef.collection('toppings').doc(toppingId).update({ stock: restoredStock });
+              } else {
+                topping.stock = restoredStock;
+              }
+            }
+          }
+        } else if (item.toppingIds && item.toppingIds.length > 0) {
+          for (const toppingId of item.toppingIds) {
+            const topping = appData.toppings.find(t => t.id === toppingId);
+            if (topping) {
+              const restoredStock = (topping.stock || 0) + item.qty;
+              if (pRef) {
+                await pRef.collection('toppings').doc(toppingId).update({ stock: restoredStock });
+              } else {
+                topping.stock = restoredStock;
+              }
+            }
+          }
+        }
+      }
     }
 
 
@@ -3782,7 +4185,6 @@ const firebaseConfig = {
 
         // Cek apakah Varian ini punya pengajuan perubahan stok yang masih menunggu persetujuan
         const pendingReq = (appData.stockRequests || []).find(r => r.toppingId === t.id && r.status === 'pending');
-        const isDisabled = isKasir && !!pendingReq;
 
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50 transition border-b border-slate-100">
@@ -3801,59 +4203,12 @@ const firebaseConfig = {
               </span>
             </td>
             <td class="py-3 px-6 text-right">
-              <button onclick="adjustToppingStock('${t.id}', -1)" ${isDisabled ? 'disabled' : ''} class="w-7 h-7 bg-white text-slate-600 rounded-lg inline-flex items-center justify-center border border-slate-200 hover:bg-slate-50 mr-1 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"><i class="fa-solid fa-minus text-[10px]"></i></button>
-              <button onclick="adjustToppingStock('${t.id}', 1)" ${isDisabled ? 'disabled' : ''} class="w-7 h-7 bg-white text-slate-600 rounded-lg inline-flex items-center justify-center border border-slate-200 hover:bg-slate-50 mr-2 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"><i class="fa-solid fa-plus text-[10px]"></i></button>
               <button onclick="openToppingModal('edit', '${t.id}')" class="text-blue-500 hover:text-blue-600 text-sm mr-3"><i class="fa-solid fa-pen-to-square"></i></button>
               <button onclick="deleteTopping('${t.id}')" class="text-red-500 hover:text-red-600 text-sm"><i class="fa-solid fa-trash-can"></i></button>
             </td>
           </tr>
         `;
       });
-    }
-
-    async function adjustToppingStock(id, delta) {
-      const topping = appData.toppings.find(t => t.id === id);
-      if (!topping) return;
-
-      // Kasir hanya boleh menyesuaikan stok Varian di outletnya sendiri
-      if (currentUser.role === 'kasir' && topping.outletId !== currentUser.outletId) {
-        showToast("Akses Ditolak: Varian ini bukan milik outlet Anda.", "error");
-        return;
-      }
-
-      // ===== ALUR KASIR: WAJIB PERSETUJUAN ADMIN/OWNER =====
-      // Kasir tidak langsung mengubah stok. Sistem membuat pengajuan yang menunggu
-      // disetujui/ditolak oleh Admin/Owner melalui modal "Persetujuan Stok".
-      if (currentUser.role === 'kasir') {
-        const hasPending = appData.stockRequests.some(r => r.toppingId === id && r.status === 'pending');
-        if (hasPending) {
-          showToast("Varian ini masih memiliki pengajuan yang menunggu persetujuan Admin/Owner.", "warning");
-          return;
-        }
-
-        await submitStockRequest(topping, delta);
-        return;
-      }
-
-      // ===== ALUR OWNER/ADMIN: LANGSUNG DITERAPKAN =====
-      const newStock = Math.max(0, (topping.stock || 0) + delta);
-
-      if (!IS_PREVIEW && dbRef) {
-        try {
-          const pRef = dbRef.collection('artifacts').doc(appId).collection('public').doc('data').collection('toppings');
-          await pRef.doc(id).update({ stock: newStock, needsStockVerification: false });
-          await loadFirebaseData();
-        } catch (err) {
-          showToast(err.message, "error");
-          return;
-        }
-      } else {
-        topping.stock = newStock;
-        topping.needsStockVerification = false;
-        saveToLocalCache();
-      }
-      renderToppingTable();
-      checkLowStockToppings(true);
     }
 
     // Membuat pengajuan perubahan stok Varian dari Kasir, menunggu persetujuan Admin/Owner
@@ -4037,7 +4392,7 @@ const firebaseConfig = {
         outletSelect.innerHTML = appData.outlets.map(o => `<option value="${o.id}">${o.name}</option>`).join('');
       }
 
-      // Reset kondisi field stok setiap kali modal dibuka (default: bisa diisi bebas)
+      // Reset kondisi hint stok setiap kali modal dibuka
       const stockInput = document.getElementById("top-stock");
       const stockHint = document.getElementById("top-stock-locked-hint");
       stockInput.disabled = false;
@@ -4046,6 +4401,7 @@ const firebaseConfig = {
       if (mode === 'add') {
         document.getElementById("topping-modal-title").innerText = "Tambah Varian Baru";
         document.getElementById("topping-id").value = "";
+        document.getElementById("top-stock-original").value = "";
         // Owner: default outlet mengikuti pill filter yang sedang aktif (jika spesifik)
         if (!isKasir && stockOutletFilter !== 'all') {
           outletSelect.value = stockOutletFilter;
@@ -4057,13 +4413,24 @@ const firebaseConfig = {
           document.getElementById("topping-id").value = t.id;
           document.getElementById("top-name").value = t.name;
           document.getElementById("top-stock").value = t.stock;
+          document.getElementById("top-stock-original").value = t.stock;
           if (!isKasir) outletSelect.value = t.outletId || '';
 
-          // Kasir mengedit Varian yang sudah ada: stok dikunci agar perubahan stok
-          // tetap wajib melalui tombol +/- dan alur persetujuan Admin/Owner.
+          // Kasir mengedit Varian yang sudah ada: input stok tetap aktif dan boleh diisi
+          // langsung sesuai jumlah yang diinginkan. Perubahan tsb akan dikirim sebagai
+          // pengajuan dan baru berlaku setelah disetujui Admin/Owner.
           if (isKasir) {
-            stockInput.disabled = true;
-            if (stockHint) stockHint.classList.remove("hidden");
+            const hasPending = (appData.stockRequests || []).some(r => r.toppingId === t.id && r.status === 'pending');
+            if (hasPending) {
+              stockInput.disabled = true;
+              if (stockHint) {
+                stockHint.innerHTML = `<i class="fa-solid fa-clock mr-1"></i>Varian ini masih punya pengajuan stok yang menunggu persetujuan Admin/Owner. Selesaikan pengajuan tersebut terlebih dahulu.`;
+                stockHint.classList.remove("hidden");
+              }
+            } else if (stockHint) {
+              stockHint.innerHTML = `<i class="fa-solid fa-circle-info mr-1"></i>Perubahan jumlah stok di atas akan dikirim sebagai pengajuan dan wajib disetujui Admin/Owner terlebih dahulu.`;
+              stockHint.classList.remove("hidden");
+            }
           }
         }
       }
@@ -4089,28 +4456,41 @@ const firebaseConfig = {
       }
 
       // Jika sedang edit, pastikan kasir tidak mengedit Varian outlet lain (mis. via data lama di memori)
+      let existingTopping = null;
       if (id && isKasir) {
-        const existing = appData.toppings.find(t => t.id === id);
-        if (existing && existing.outletId !== currentUser.outletId) {
+        existingTopping = appData.toppings.find(t => t.id === id);
+        if (existingTopping && existingTopping.outletId !== currentUser.outletId) {
           showToast("Akses Ditolak: Varian ini bukan milik outlet Anda.", "error");
           return;
         }
       }
 
+      const desiredStock = parseInt(document.getElementById("top-stock").value) || 0;
+      const originalStockRaw = document.getElementById("top-stock-original").value;
+      const originalStock = originalStockRaw !== "" ? parseInt(originalStockRaw) || 0 : (existingTopping ? (existingTopping.stock || 0) : 0);
+      const stockDelta = desiredStock - originalStock;
+
       const payload = {
         name: document.getElementById("top-name").value.trim(),
-        stock: parseInt(document.getElementById("top-stock").value) || 0,
+        stock: desiredStock,
         outletId: chosenOutletId,
         needsStockVerification: false
       };
 
-      // Jaga-jaga anti-manipulasi: Kasir yang mengedit Varian yang sudah ada TIDAK boleh
-      // mengubah nilai stok melalui form ini. Stok wajib diubah lewat tombol +/- yang
-      // melalui alur persetujuan Admin/Owner.
-      if (id && isKasir) {
-        const existingTopping = appData.toppings.find(t => t.id === id);
-        if (existingTopping) {
-          payload.stock = existingTopping.stock;
+      // Kasir mengedit Varian yang sudah ada: perubahan JUMLAH STOK tidak langsung disimpan.
+      // Nilai stok pada payload tetap dipertahankan (tidak berubah) di sini; jika kasir mengubah
+      // angka stok, perubahan tsb dikirim terpisah sebagai pengajuan menunggu persetujuan Admin/Owner.
+      let pendingStockSubmission = false;
+      if (id && isKasir && existingTopping) {
+        payload.stock = existingTopping.stock;
+
+        if (stockDelta !== 0) {
+          const hasPending = appData.stockRequests.some(r => r.toppingId === id && r.status === 'pending');
+          if (hasPending) {
+            showToast("Varian ini masih memiliki pengajuan stok yang menunggu persetujuan. Selesaikan pengajuan tersebut terlebih dahulu.", "warning");
+            return;
+          }
+          pendingStockSubmission = true;
         }
       }
 
@@ -4148,7 +4528,14 @@ const firebaseConfig = {
       renderToppingOutletFilterPills();
       renderToppingTable();
       checkLowStockToppings(true);
-      showToast("Data Varian berhasil disimpan.");
+
+      // Jika kasir mengubah angka stok pada form ini, kirim sebagai pengajuan terpisah
+      // yang menunggu persetujuan Admin/Owner (nilai stok aktual belum berubah).
+      if (pendingStockSubmission) {
+        await submitStockRequest({ id: id, name: payload.name, outletId: payload.outletId, stock: originalStock }, stockDelta);
+      } else {
+        showToast("Data Varian berhasil disimpan.");
+      }
     });
 
     function deleteTopping(id) {
@@ -4727,8 +5114,9 @@ const firebaseConfig = {
               <span class="inline-block px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg">${t.paymentMethod}</span>
             </td>
             <td class="py-4 px-6 text-right text-emerald-600 font-extrabold">${formatRupiah(t.total)}</td>
-            <td class="py-4 px-6 text-center">
-              <button onclick="reprintTransaction('${t.id}')" class="text-emerald-600 hover:text-emerald-700 font-bold text-xs"><i class="fa-solid fa-print"></i> Struk</button>
+            <td class="py-4 px-6 text-center whitespace-nowrap">
+              <button onclick="reprintTransaction('${t.id}')" class="text-emerald-600 hover:text-emerald-700 font-bold text-xs mr-3" title="Cetak Ulang Struk"><i class="fa-solid fa-print"></i></button>
+              <button onclick="deleteTransaction('${t.id}')" class="text-red-500 hover:text-red-600 font-bold text-xs" title="Hapus Transaksi"><i class="fa-solid fa-trash-can"></i></button>
             </td>
           </tr>
         `;
