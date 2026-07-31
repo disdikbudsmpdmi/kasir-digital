@@ -5036,16 +5036,16 @@ const firebaseConfig = {
 
     // ================= TAB: LAPORAN PENJUALAN =================
     function loadReports() {
-      // Set default date range if empty (current month)
+      // Default: Tanggal Awal = awal bulan berjalan, Tanggal Akhir = hari ini (tetap bisa diedit manual oleh pengguna)
       const now = new Date();
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-      
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().split('T')[0];
+
       if (!document.getElementById("report-start-date").value) {
         document.getElementById("report-start-date").value = firstDay;
       }
       if (!document.getElementById("report-end-date").value) {
-        document.getElementById("report-end-date").value = lastDay;
+        document.getElementById("report-end-date").value = today;
       }
 
       filterReports();
