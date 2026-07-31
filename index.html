@@ -18,6 +18,7 @@
   
   <!-- ChartJS -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <!-- Tailwind Configuration to match Sugee Dimsum Theme -->
   <script>
@@ -105,6 +106,11 @@
       body.printing-receipt #print-receipt-modal > div {
         max-height: none !important;
         overflow: visible !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+      }
+      body.printing-receipt #thermal-receipt {
+        border: none !important;
       }
       
       /* Mode cetak laporan PDF (Gaya mirip Invoice referensi) */
@@ -829,7 +835,7 @@
             <i class="fa-solid fa-file-pdf"></i> Cetak Laporan (PDF)
           </button>
           <button onclick="exportReportsToXLS()" class="flex-1 sm:flex-initial px-5 py-2.5 bg-emerald-700 text-white font-bold text-xs rounded-xl hover:bg-emerald-800 transition flex items-center justify-center gap-2 whitespace-nowrap">
-            <i class="fa-solid fa-file-excel"></i> Ekspor (XLS)
+            <i class="fa-solid fa-file-excel"></i> Ekspor (XLSX)
           </button>
         </div>
       </div>
@@ -1290,18 +1296,18 @@
       <!-- Area Struk bisa discroll jika isinya panjang, agar tombol cetak di bawah tetap terlihat -->
       <div class="overflow-y-auto flex-1 min-h-0 pr-1">
       <!-- Kertas Struk Virtual -->
-      <div id="thermal-receipt" class="bg-white p-4 font-mono text-xs text-slate-800 space-y-4 border border-dashed border-slate-300">
+      <div id="thermal-receipt" class="bg-white p-2 font-mono text-[11px] leading-tight text-slate-800 space-y-1.5 border border-dashed border-slate-300">
         <!-- Logo & Header -->
-        <div class="text-center">
-          <h3 id="receipt-store-name" class="font-bold text-base uppercase">Sugee Dimsum</h3>
-          <p id="receipt-store-address" class="text-[10px]">Jl. Merdeka No. 12, Jakarta</p>
-          <p id="receipt-store-phone" class="text-[10px]">Telp: 08123456789</p>
+        <div class="text-center leading-tight">
+          <h3 id="receipt-store-name" class="font-bold text-[13px] uppercase">Sugee Dimsum</h3>
+          <p id="receipt-store-address" class="text-[9px]">Jl. Merdeka No. 12, Jakarta</p>
+          <p id="receipt-store-phone" class="text-[9px]">Telp: 08123456789</p>
         </div>
         
-        <div class="border-t border-dashed border-slate-300 my-2"></div>
+        <div class="border-t border-dashed border-slate-300 my-1"></div>
         
         <!-- Info Transaksi -->
-        <div class="space-y-1 text-[10px]">
+        <div class="space-y-0.5 text-[9px] leading-tight">
           <div class="flex justify-between">
             <span>No: <span id="receipt-trx-id">TRX-1234</span></span>
             <span id="receipt-date">2026-07-02 14:00</span>
@@ -1315,17 +1321,17 @@
           </div>
         </div>
 
-        <div class="border-t border-dashed border-slate-300 my-2"></div>
+        <div class="border-t border-dashed border-slate-300 my-1"></div>
 
         <!-- Daftar Menu -->
-        <div id="receipt-items-container" class="space-y-1.5 text-[11px]">
+        <div id="receipt-items-container" class="space-y-0.5 text-[10px] leading-tight">
           <!-- Dynamic Items Rows -->
         </div>
 
-        <div class="border-t border-dashed border-slate-300 my-2"></div>
+        <div class="border-t border-dashed border-slate-300 my-1"></div>
 
         <!-- Subtotal & Total -->
-        <div class="space-y-1 text-right text-[11px]">
+        <div class="space-y-0.5 text-right text-[10px] leading-tight">
           <div class="flex justify-between">
             <span>Subtotal</span>
             <span id="receipt-subtotal">Rp 0</span>
@@ -1334,13 +1340,13 @@
             <span>Diskon Member</span>
             <span id="receipt-discount">Rp 0</span>
           </div>
-          <div class="flex justify-between font-bold text-[12px]">
+          <div class="flex justify-between font-bold text-[11px]">
             <span>Total Akhir</span>
             <span id="receipt-total">Rp 0</span>
           </div>
         </div>
 
-        <div id="receipt-change-section" class="space-y-1 text-right text-[11px] border-t border-dashed border-slate-200 pt-1">
+        <div id="receipt-change-section" class="space-y-0.5 text-right text-[10px] leading-tight border-t border-dashed border-slate-200 pt-0.5">
           <div class="flex justify-between">
             <span>Bayar</span>
             <span id="receipt-cash-pay">Rp 0</span>
@@ -1351,9 +1357,9 @@
           </div>
         </div>
 
-        <div class="border-t border-dashed border-slate-300 my-2"></div>
+        <div class="border-t border-dashed border-slate-300 my-1"></div>
 
-        <div class="text-center text-[10px]" id="receipt-footer">
+        <div class="text-center text-[9px] leading-tight" id="receipt-footer">
           Terima kasih telah berkunjung!<br>Selamat Menikmati Dimsum Terbaik Kami
         </div>
       </div>
@@ -1562,6 +1568,9 @@ const firebaseConfig = {
         if (!badge) return;
         badge.classList.toggle("hidden", lowStockItems.length === 0);
       });
+
+      // Pop-up notifikasi stok menipis dinonaktifkan sesuai permintaan (titik merah di sidebar tetap aktif sebagai indikator halus)
+      return;
 
       if (!showToastNotif || lowStockItems.length === 0) return;
 
@@ -5266,7 +5275,7 @@ const firebaseConfig = {
       }, 1000);
     };
 
-    // Fungsi Ekspor Laporan Filtered ke Berkas Excel (.xls)
+    // Fungsi Ekspor Laporan Filtered ke Berkas Excel (.xlsx - Open XML, kompatibel semua perangkat)
     window.exportReportsToXLS = function() {
       const startDate = document.getElementById("report-start-date").value;
       const endDate = document.getElementById("report-end-date").value;
@@ -5298,29 +5307,43 @@ const firebaseConfig = {
         return new Date(b.date) - new Date(a.date);
       });
 
-      // Pembuatan struktur TSV Excel yang aman dan kompatibel dibuka oleh Microsoft Excel
-      let xlsContent = "ID Transaksi\tTanggal & Waktu\tKasir\tOutlet Cabang\tItem Terjual\tMetode Pembayaran\tSubtotal\tPajak PB1\tTotal Akhir (Omset)\n";
-      
+      // Pembuatan data baris untuk berkas Excel (.xlsx) asli
+      const xlsHeader = ["ID Transaksi", "Tanggal & Waktu", "Kasir", "Outlet Cabang", "Item Terjual", "Metode Pembayaran", "Subtotal", "Pajak PB1", "Total Akhir (Omset)"];
+      const xlsRows = [xlsHeader];
+
       filtered.forEach(t => {
         const dateStr = new Date(t.date).toLocaleString('id-ID');
         const itemsStr = t.items.map(item => `${item.name} (${item.qty}x)`).join(', ');
         const outletObj = appData.outlets.find(o => o.id === t.outletId);
         const outletName = outletObj ? outletObj.name : 'Unknown';
 
-        xlsContent += `${t.id}\t${dateStr}\t${t.cashierName}\t${outletName}\t${itemsStr}\t${t.paymentMethod}\t${t.subtotal}\t${t.tax}\t${t.total}\n`;
+        xlsRows.push([t.id, dateStr, t.cashierName, outletName, itemsStr, t.paymentMethod, t.subtotal, t.tax, t.total]);
       });
 
-      // Proses pengunduhan berkas Excel client-side
+      // Proses pembuatan & pengunduhan berkas Excel (.xlsx) asli menggunakan SheetJS
+      // Format .xlsx (Open XML) ini kompatibel dengan semua perangkat & versi Office (desktop maupun mobile)
       try {
-        const blob = new Blob([xlsContent], { type: "application/vnd.ms-excel;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const downloadLink = document.createElement("a");
-        downloadLink.href = url;
-        downloadLink.setAttribute("download", `Laporan_Penjualan_${startDate}_s_d_${endDate}.xls`);
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-        showToast("Laporan penjualan berhasil diekspor ke berkas XLS.");
+        if (typeof XLSX === "undefined") {
+          showToast("Gagal mengekspor: pustaka Excel belum termuat. Periksa koneksi internet Anda.", "error");
+          return;
+        }
+
+        const worksheet = XLSX.utils.aoa_to_sheet(xlsRows);
+
+        // Atur lebar kolom otomatis agar rapi saat dibuka
+        worksheet["!cols"] = xlsHeader.map((h, colIdx) => {
+          const maxLen = xlsRows.reduce((max, row) => {
+            const cellVal = row[colIdx] === undefined || row[colIdx] === null ? "" : String(row[colIdx]);
+            return Math.max(max, cellVal.length);
+          }, h.length);
+          return { wch: Math.min(Math.max(maxLen + 2, 10), 40) };
+        });
+
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Penjualan");
+
+        XLSX.writeFile(workbook, `Laporan_Penjualan_${startDate}_s_d_${endDate}.xlsx`, { bookType: "xlsx" });
+        showToast("Laporan penjualan berhasil diekspor ke berkas XLSX.");
       } catch (err) {
         showToast("Gagal mengekspor data: " + err.message, "error");
       }
