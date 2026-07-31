@@ -1085,6 +1085,10 @@
             <i class="fa-solid fa-circle-info mr-1"></i>Perubahan jumlah stok di atas akan dikirim sebagai pengajuan dan wajib disetujui Admin/Owner terlebih dahulu.
           </p>
         </div>
+        <div id="top-stock-note-wrap" class="hidden">
+          <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Catatan / Alasan (Opsional)</label>
+          <input type="text" id="top-stock-note" maxlength="150" placeholder="Contoh: Stok baru datang, ada barang rusak" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-sm font-semibold">
+        </div>
         <div class="flex justify-end gap-3 pt-2">
           <button type="button" onclick="closeToppingModal()" class="px-4 py-2 text-slate-500 hover:text-slate-700 text-xs font-bold">Batal</button>
           <button type="submit" class="px-5 py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl">Simpan</button>
@@ -1183,9 +1187,13 @@
       </div>
       <h4 id="delete-trx-title" class="text-base font-extrabold text-slate-800 mb-2">Hapus Transaksi?</h4>
       <p id="delete-trx-message" class="text-sm text-slate-500 font-semibold mb-1">-</p>
-      <p id="delete-trx-info" class="text-[11px] text-amber-600 font-semibold bg-amber-50 rounded-xl px-3 py-2.5 mt-3 mb-5 text-left">
+      <p id="delete-trx-info" class="text-[11px] text-amber-600 font-semibold bg-amber-50 rounded-xl px-3 py-2.5 mt-3 mb-3 text-left">
         <i class="fa-solid fa-circle-info mr-1"></i>Stok Produk & Varian yang terpakai di transaksi ini akan <span class="font-extrabold">dikembalikan otomatis</span>. Tindakan ini tidak bisa dibatalkan.
       </p>
+      <div id="delete-trx-note-wrap" class="hidden text-left mb-5">
+        <label class="block text-[11px] font-bold uppercase text-slate-400 mb-1.5">Catatan / Alasan (Opsional)</label>
+        <input type="text" id="delete-trx-note" maxlength="150" placeholder="Contoh: Salah input menu, pelanggan batal" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 text-xs font-semibold">
+      </div>
       <div class="flex gap-3">
         <button type="button" onclick="closeDeleteTrxModal()" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 transition">Batal</button>
         <button type="button" id="delete-trx-confirm-btn" onclick="confirmDeleteTransaction()" class="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white font-bold text-xs hover:bg-red-600 transition shadow-sm">Ya, Hapus</button>
@@ -3513,6 +3521,11 @@ const firebaseConfig = {
       confirmBtn.innerText = isKasir ? "Ya, Ajukan" : "Ya, Hapus";
       confirmBtn.onclick = isKasir ? submitDeleteTransactionRequest : confirmDeleteTransaction;
 
+      const noteWrap = document.getElementById("delete-trx-note-wrap");
+      const noteInput = document.getElementById("delete-trx-note");
+      noteInput.value = "";
+      noteWrap.classList.toggle("hidden", !isKasir);
+
       document.getElementById("delete-trx-confirm-modal").classList.remove("hidden");
     };
 
@@ -3562,6 +3575,7 @@ const firebaseConfig = {
       }
 
       const outletObj = appData.outlets.find(o => o.id === trx.outletId);
+      const noteVal = (document.getElementById("delete-trx-note").value || "").trim();
       const newRequest = {
         id: 'DELREQ-' + Date.now(),
         trxId: trx.id,
@@ -3569,6 +3583,7 @@ const firebaseConfig = {
         trxDate: trx.date,
         outletId: trx.outletId,
         outletName: outletObj ? outletObj.name : '-',
+        note: noteVal,
         status: 'pending',
         requestedBy: currentUser.id || currentUser.name,
         requestedByName: currentUser.name,
@@ -3623,6 +3638,7 @@ const firebaseConfig = {
             <p class="font-bold text-slate-800 text-sm truncate">${r.trxId} &middot; ${formatRupiah(r.trxTotal)}</p>
             <p class="text-[11px] text-slate-400 font-semibold mt-0.5">Outlet: ${r.outletName || '-'}</p>
             <p class="text-[11px] text-slate-400 font-semibold">Diajukan oleh: ${r.requestedByName || '-'}</p>
+            ${r.note ? `<p class="text-[11px] text-slate-500 font-semibold italic mt-1">"${r.note}"</p>` : ''}
           </div>
           <div class="flex gap-2 shrink-0">
             <button onclick="rejectDeleteRequest('${r.id}')" class="w-9 h-9 bg-white text-red-500 rounded-xl inline-flex items-center justify-center border border-slate-200 hover:bg-red-50" title="Tolak">
@@ -4440,7 +4456,7 @@ const firebaseConfig = {
     }
 
     // Membuat pengajuan perubahan stok Varian dari Kasir, menunggu persetujuan Admin/Owner
-    async function submitStockRequest(topping, delta) {
+    async function submitStockRequest(topping, delta, note) {
       const outletName = (appData.outlets.find(o => o.id === topping.outletId) || {}).name || '-';
       const newRequest = {
         id: `SR-${Date.now()}`,
@@ -4450,6 +4466,7 @@ const firebaseConfig = {
         outletName: outletName,
         delta: delta,
         currentStock: topping.stock || 0,
+        note: (note || '').trim(),
         status: 'pending',
         requestedBy: currentUser.id || currentUser.name,
         requestedByName: currentUser.name,
@@ -4503,6 +4520,7 @@ const firebaseConfig = {
             <p class="font-bold text-slate-800 text-sm truncate">${r.toppingName}</p>
             <p class="text-[11px] text-slate-400 font-semibold mt-0.5">Outlet: ${r.outletName || '-'}</p>
             <p class="text-[11px] text-slate-400 font-semibold">Diajukan oleh: ${r.requestedByName || '-'}</p>
+            ${r.note ? `<p class="text-[11px] text-slate-500 font-semibold italic mt-1">"${r.note}"</p>` : ''}
             <p class="text-xs font-bold mt-1.5 ${r.delta > 0 ? 'text-emerald-600' : 'text-red-500'}">
               ${r.delta > 0 ? '+' : ''}${r.delta} stok (dari ${r.currentStock} menjadi ${Math.max(0, r.currentStock + r.delta)})
             </p>
@@ -4623,8 +4641,12 @@ const firebaseConfig = {
       // Reset kondisi hint stok setiap kali modal dibuka
       const stockInput = document.getElementById("top-stock");
       const stockHint = document.getElementById("top-stock-locked-hint");
+      const stockNoteWrap = document.getElementById("top-stock-note-wrap");
+      const stockNoteInput = document.getElementById("top-stock-note");
       stockInput.disabled = false;
       if (stockHint) stockHint.classList.add("hidden");
+      if (stockNoteWrap) stockNoteWrap.classList.add("hidden");
+      if (stockNoteInput) stockNoteInput.value = "";
 
       if (mode === 'add') {
         document.getElementById("topping-modal-title").innerText = "Tambah Varian Baru";
@@ -4658,6 +4680,7 @@ const firebaseConfig = {
             } else if (stockHint) {
               stockHint.innerHTML = `<i class="fa-solid fa-circle-info mr-1"></i>Perubahan jumlah stok di atas akan dikirim sebagai pengajuan dan wajib disetujui Admin/Owner terlebih dahulu.`;
               stockHint.classList.remove("hidden");
+              if (stockNoteWrap) stockNoteWrap.classList.remove("hidden");
             }
           }
         }
@@ -4760,7 +4783,8 @@ const firebaseConfig = {
       // Jika kasir mengubah angka stok pada form ini, kirim sebagai pengajuan terpisah
       // yang menunggu persetujuan Admin/Owner (nilai stok aktual belum berubah).
       if (pendingStockSubmission) {
-        await submitStockRequest({ id: id, name: payload.name, outletId: payload.outletId, stock: originalStock }, stockDelta);
+        const stockNoteVal = (document.getElementById("top-stock-note").value || "").trim();
+        await submitStockRequest({ id: id, name: payload.name, outletId: payload.outletId, stock: originalStock }, stockDelta, stockNoteVal);
       } else {
         showToast("Data Varian berhasil disimpan.");
       }
