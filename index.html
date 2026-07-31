@@ -808,6 +808,14 @@
 
     <!-- ================= TAB: LAPORAN ================= -->
     <section id="tab-laporan" class="tab-content hidden space-y-6">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+        <h3 class="text-xl font-bold text-slate-800">Laporan Penjualan</h3>
+        <button onclick="openDeleteApprovalModal()" class="owner-only relative px-4 py-2.5 bg-white text-slate-600 font-bold text-xs rounded-xl border border-slate-200 hover:bg-slate-50 transition flex items-center gap-2 shadow-sm">
+          <i class="fa-solid fa-clipboard-check"></i> Persetujuan Hapus Transaksi
+          <span id="delete-approval-badge" class="hidden absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center">0</span>
+        </button>
+      </div>
+
       <!-- Report Filters -->
       <div class="glass-card rounded-3xl p-6 shadow-sm flex flex-col xl:flex-row items-end gap-4">
         <div class="flex-1 w-full">
@@ -1173,14 +1181,30 @@
       <div class="w-14 h-14 mx-auto rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mb-4">
         <i class="fa-solid fa-trash-can text-xl"></i>
       </div>
-      <h4 class="text-base font-extrabold text-slate-800 mb-2">Hapus Transaksi?</h4>
+      <h4 id="delete-trx-title" class="text-base font-extrabold text-slate-800 mb-2">Hapus Transaksi?</h4>
       <p id="delete-trx-message" class="text-sm text-slate-500 font-semibold mb-1">-</p>
-      <p class="text-[11px] text-amber-600 font-semibold bg-amber-50 rounded-xl px-3 py-2.5 mt-3 mb-5 text-left">
+      <p id="delete-trx-info" class="text-[11px] text-amber-600 font-semibold bg-amber-50 rounded-xl px-3 py-2.5 mt-3 mb-5 text-left">
         <i class="fa-solid fa-circle-info mr-1"></i>Stok Produk & Varian yang terpakai di transaksi ini akan <span class="font-extrabold">dikembalikan otomatis</span>. Tindakan ini tidak bisa dibatalkan.
       </p>
       <div class="flex gap-3">
         <button type="button" onclick="closeDeleteTrxModal()" class="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 transition">Batal</button>
-        <button type="button" onclick="confirmDeleteTransaction()" class="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white font-bold text-xs hover:bg-red-600 transition shadow-sm">Ya, Hapus</button>
+        <button type="button" id="delete-trx-confirm-btn" onclick="confirmDeleteTransaction()" class="flex-1 px-4 py-2.5 rounded-xl bg-red-500 text-white font-bold text-xs hover:bg-red-600 transition shadow-sm">Ya, Hapus</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PERSETUJUAN HAPUS TRANSAKSI (KHUSUS OWNER) -->
+  <div id="delete-approval-modal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl relative max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between mb-1">
+        <h4 class="text-lg font-bold text-slate-800">Persetujuan Hapus Transaksi</h4>
+        <button onclick="closeDeleteApprovalModal()" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <p class="text-[11px] text-slate-400 font-semibold mb-4">Pengajuan hapus transaksi oleh Kasir akan tampil di sini. Transaksi baru benar-benar terhapus & stok dikembalikan setelah Anda menyetujuinya.</p>
+      <div id="delete-approval-list" class="space-y-3 overflow-y-auto pr-1">
+        <!-- Dynamic list pengajuan hapus transaksi pending -->
       </div>
     </div>
   </div>
@@ -1475,6 +1499,7 @@ const firebaseConfig = {
       categories: [],
       toppings: [],
       stockRequests: [],
+      deleteRequests: [],
       transactions: [],
       outlets: [],
       employees: [],
@@ -1840,6 +1865,9 @@ const firebaseConfig = {
       // 2c. Permintaan Persetujuan Perubahan Stok Varian dari Kasir
       appData.stockRequests = [];
 
+      // 2d. Permintaan Persetujuan Hapus Transaksi dari Kasir
+      appData.deleteRequests = [];
+
       // 3. Data Karyawan
       appData.employees = [];
 
@@ -1875,6 +1903,10 @@ const firebaseConfig = {
         const stockReqSnap = await pRef.collection('stockRequests').get();
         appData.stockRequests = stockReqSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
+        // Ambil data permintaan persetujuan hapus transaksi dari Kasir
+        const delReqSnap = await pRef.collection('deleteRequests').get();
+        appData.deleteRequests = delReqSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
         // Ambil data outlet
         const outSnap = await pRef.collection('outlets').get();
         appData.outlets = outSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -1908,6 +1940,7 @@ const firebaseConfig = {
         updateUISelectMenus();
         checkLowStockToppings(false);
         updateStockApprovalBadge();
+        updateDeleteApprovalBadge();
       } catch (err) {
         console.error("Gagal menarik data dari Firestore: ", err);
         showToast("Error sinkronisasi database, beralih ke Mode Cache Offline.", "error");
@@ -2015,9 +2048,11 @@ const firebaseConfig = {
         if (!Array.isArray(appData.categories)) appData.categories = [];
         if (!Array.isArray(appData.toppings)) appData.toppings = [];
         if (!Array.isArray(appData.stockRequests)) appData.stockRequests = [];
+        if (!Array.isArray(appData.deleteRequests)) appData.deleteRequests = [];
         migrateToppingsWithoutOutlet();
         checkLowStockToppings(false);
         updateStockApprovalBadge();
+        updateDeleteApprovalBadge();
       }
     }
 
@@ -3456,8 +3491,28 @@ const firebaseConfig = {
         return;
       }
 
+      const isKasir = currentUser.role === 'kasir';
+
+      // Kasir: cegah pengajuan ganda jika transaksi ini sudah menunggu persetujuan
+      if (isKasir) {
+        const existing = (appData.deleteRequests || []).find(r => r.trxId === id && r.status === 'pending');
+        if (existing) {
+          showToast("Transaksi ini sudah diajukan untuk dihapus & sedang menunggu persetujuan Owner.", "warning");
+          return;
+        }
+      }
+
       pendingDeleteTrxId = id;
-      document.getElementById("delete-trx-message").innerHTML = `Hapus transaksi <span class="font-extrabold text-slate-800">${trx.id}</span> senilai <span class="font-extrabold text-slate-800">${formatRupiah(trx.total)}</span>?`;
+      document.getElementById("delete-trx-title").innerText = isKasir ? "Ajukan Hapus Transaksi?" : "Hapus Transaksi?";
+      document.getElementById("delete-trx-message").innerHTML = `${isKasir ? 'Ajukan penghapusan' : 'Hapus'} transaksi <span class="font-extrabold text-slate-800">${trx.id}</span> senilai <span class="font-extrabold text-slate-800">${formatRupiah(trx.total)}</span>?`;
+      document.getElementById("delete-trx-info").innerHTML = isKasir
+        ? `<i class="fa-solid fa-circle-info mr-1"></i>Transaksi <span class="font-extrabold">tidak langsung terhapus</span>. Pengajuan ini akan dikirim ke <span class="font-extrabold">Owner</span> untuk disetujui terlebih dahulu.`
+        : `<i class="fa-solid fa-circle-info mr-1"></i>Stok Produk & Varian yang terpakai di transaksi ini akan <span class="font-extrabold">dikembalikan otomatis</span>. Tindakan ini tidak bisa dibatalkan.`;
+
+      const confirmBtn = document.getElementById("delete-trx-confirm-btn");
+      confirmBtn.innerText = isKasir ? "Ya, Ajukan" : "Ya, Hapus";
+      confirmBtn.onclick = isKasir ? submitDeleteTransactionRequest : confirmDeleteTransaction;
+
       document.getElementById("delete-trx-confirm-modal").classList.remove("hidden");
     };
 
@@ -3496,6 +3551,170 @@ const firebaseConfig = {
       checkLowStockToppings(true);
       showToast("Transaksi berhasil dihapus & stok Produk/Varian sudah dikembalikan otomatis.");
     };
+
+    // ================= PENGAJUAN HAPUS TRANSAKSI OLEH KASIR (BUTUH PERSETUJUAN OWNER) =================
+    window.submitDeleteTransactionRequest = async function() {
+      const id = pendingDeleteTrxId;
+      const trx = appData.transactions.find(t => t.id === id);
+      if (!id || !trx) {
+        closeDeleteTrxModal();
+        return;
+      }
+
+      const outletObj = appData.outlets.find(o => o.id === trx.outletId);
+      const newRequest = {
+        id: 'DELREQ-' + Date.now(),
+        trxId: trx.id,
+        trxTotal: trx.total,
+        trxDate: trx.date,
+        outletId: trx.outletId,
+        outletName: outletObj ? outletObj.name : '-',
+        status: 'pending',
+        requestedBy: currentUser.id || currentUser.name,
+        requestedByName: currentUser.name,
+        requestedAt: new Date().toISOString()
+      };
+
+      if (!IS_PREVIEW && dbRef) {
+        try {
+          const pRef = dbRef.collection('artifacts').doc(appId).collection('public').doc('data').collection('deleteRequests');
+          await pRef.doc(newRequest.id).set(newRequest);
+          await loadFirebaseData();
+        } catch (err) {
+          showToast(err.message, "error");
+          return;
+        }
+      } else {
+        appData.deleteRequests.push(newRequest);
+        saveToLocalCache();
+      }
+
+      closeDeleteTrxModal();
+      filterReports();
+      updateDeleteApprovalBadge();
+      showToast(`Pengajuan hapus transaksi "${trx.id}" berhasil dikirim. Menunggu persetujuan Owner.`, "success");
+    };
+
+    // ================= MODAL PERSETUJUAN HAPUS TRANSAKSI (KHUSUS OWNER) =================
+    window.openDeleteApprovalModal = function() {
+      renderDeleteApprovalList();
+      document.getElementById("delete-approval-modal").classList.remove("hidden");
+    };
+
+    window.closeDeleteApprovalModal = function() {
+      document.getElementById("delete-approval-modal").classList.add("hidden");
+    };
+
+    function renderDeleteApprovalList() {
+      const container = document.getElementById("delete-approval-list");
+      if (!container) return;
+
+      const pending = (appData.deleteRequests || []).filter(r => r.status === 'pending')
+        .sort((a, b) => new Date(a.requestedAt) - new Date(b.requestedAt));
+
+      if (pending.length === 0) {
+        container.innerHTML = `<div class="py-10 text-center text-slate-400 text-xs font-semibold">Tidak ada pengajuan hapus transaksi yang menunggu persetujuan.</div>`;
+        return;
+      }
+
+      container.innerHTML = pending.map(r => `
+        <div class="flex items-center justify-between gap-3 p-4 rounded-2xl border border-slate-200 bg-slate-50">
+          <div class="min-w-0">
+            <p class="font-bold text-slate-800 text-sm truncate">${r.trxId} &middot; ${formatRupiah(r.trxTotal)}</p>
+            <p class="text-[11px] text-slate-400 font-semibold mt-0.5">Outlet: ${r.outletName || '-'}</p>
+            <p class="text-[11px] text-slate-400 font-semibold">Diajukan oleh: ${r.requestedByName || '-'}</p>
+          </div>
+          <div class="flex gap-2 shrink-0">
+            <button onclick="rejectDeleteRequest('${r.id}')" class="w-9 h-9 bg-white text-red-500 rounded-xl inline-flex items-center justify-center border border-slate-200 hover:bg-red-50" title="Tolak">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            <button onclick="approveDeleteRequest('${r.id}')" class="w-9 h-9 bg-emerald-600 text-white rounded-xl inline-flex items-center justify-center hover:bg-emerald-700" title="Setujui">
+              <i class="fa-solid fa-check"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Menyetujui pengajuan: transaksi benar-benar dihapus & stok Produk/Varian dikembalikan
+    window.approveDeleteRequest = async function(requestId) {
+      const request = appData.deleteRequests.find(r => r.id === requestId);
+      if (!request) return;
+
+      const trx = appData.transactions.find(t => t.id === request.trxId);
+      if (!trx) {
+        showToast("Transaksi terkait sudah tidak ditemukan, pengajuan dibatalkan.", "error");
+        await removeDeleteRequest(requestId);
+        renderDeleteApprovalList();
+        updateDeleteApprovalBadge();
+        return;
+      }
+
+      if (!IS_PREVIEW && dbRef) {
+        try {
+          const pRef = dbRef.collection('artifacts').doc(appId).collection('public').doc('data');
+          await restoreStockForTransaction(trx, pRef);
+          await pRef.collection('transactions').doc(trx.id).delete();
+          await pRef.collection('deleteRequests').doc(requestId).delete();
+          await loadFirebaseData();
+        } catch (err) {
+          showToast(err.message, "error");
+          return;
+        }
+      } else {
+        restoreStockForTransaction(trx, null);
+        appData.transactions = appData.transactions.filter(t => t.id !== trx.id);
+        appData.deleteRequests = appData.deleteRequests.filter(r => r.id !== requestId);
+        saveToLocalCache();
+      }
+
+      renderDeleteApprovalList();
+      updateDeleteApprovalBadge();
+      filterReports();
+      renderToppingTable();
+      checkLowStockToppings(true);
+      showToast(`Pengajuan hapus transaksi "${request.trxId}" disetujui & stok sudah dikembalikan otomatis.`, "success");
+    };
+
+    // Menolak pengajuan: transaksi tetap ada, pengajuan dihapus
+    window.rejectDeleteRequest = async function(requestId) {
+      const request = appData.deleteRequests.find(r => r.id === requestId);
+      if (!request) return;
+
+      await removeDeleteRequest(requestId);
+      renderDeleteApprovalList();
+      updateDeleteApprovalBadge();
+      filterReports();
+      showToast(`Pengajuan hapus transaksi "${request.trxId}" ditolak.`, "warning");
+    };
+
+    async function removeDeleteRequest(requestId) {
+      if (!IS_PREVIEW && dbRef) {
+        try {
+          const pRef = dbRef.collection('artifacts').doc(appId).collection('public').doc('data').collection('deleteRequests');
+          await pRef.doc(requestId).delete();
+          await loadFirebaseData();
+        } catch (err) {
+          showToast(err.message, "error");
+        }
+      } else {
+        appData.deleteRequests = appData.deleteRequests.filter(r => r.id !== requestId);
+        saveToLocalCache();
+      }
+    }
+
+    // Memperbarui badge jumlah pengajuan hapus transaksi yang menunggu persetujuan (hanya relevan untuk Owner)
+    function updateDeleteApprovalBadge() {
+      const badge = document.getElementById("delete-approval-badge");
+      if (!badge) return;
+      const pendingCount = (appData.deleteRequests || []).filter(r => r.status === 'pending').length;
+      if (pendingCount > 0) {
+        badge.innerText = pendingCount;
+        badge.classList.remove("hidden");
+      } else {
+        badge.classList.add("hidden");
+      }
+    }
 
     // Mengembalikan stok Produk & Varian yang terpotong akibat suatu transaksi (dipanggil saat transaksi dihapus).
     // pRef diisi referensi koleksi Firestore 'data' jika mode cloud aktif, atau null untuk mode local cache.
@@ -5111,6 +5330,10 @@ const firebaseConfig = {
         // Buat string ringkasan item
         const itemsStr = t.items.map(item => `${item.name} (${item.qty}x)`).join(', ');
 
+        // Cek status pengajuan hapus transaksi (relevan utk tampilan kasir)
+        const pendingDelReq = (appData.deleteRequests || []).find(r => r.trxId === t.id && r.status === 'pending');
+        const showPendingBadge = currentUser.role === 'kasir' && pendingDelReq;
+
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50 transition border-b border-slate-100">
             <td class="py-4 px-6 text-slate-800 font-bold">${t.id}</td>
@@ -5125,7 +5348,10 @@ const firebaseConfig = {
             <td class="py-4 px-6 text-right text-emerald-600 font-extrabold">${formatRupiah(t.total)}</td>
             <td class="py-4 px-6 text-center whitespace-nowrap">
               <button onclick="reprintTransaction('${t.id}')" class="text-emerald-600 hover:text-emerald-700 font-bold text-xs mr-3" title="Cetak Ulang Struk"><i class="fa-solid fa-print"></i></button>
-              <button onclick="deleteTransaction('${t.id}')" class="text-red-500 hover:text-red-600 font-bold text-xs" title="Hapus Transaksi"><i class="fa-solid fa-trash-can"></i></button>
+              ${showPendingBadge
+                ? `<span class="inline-flex items-center gap-1 text-amber-600 font-bold text-[10px] bg-amber-50 px-2 py-1.5 rounded-lg" title="Menunggu persetujuan Owner"><i class="fa-solid fa-clock"></i> Menunggu Approval</span>`
+                : `<button onclick="deleteTransaction('${t.id}')" class="text-red-500 hover:text-red-600 font-bold text-xs" title="Hapus Transaksi"><i class="fa-solid fa-trash-can"></i></button>`
+              }
             </td>
           </tr>
         `;
